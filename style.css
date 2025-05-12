@@ -98,10 +98,6 @@ body {
     width: 100%;
 }
 
-.sidebar.collapsed {
-    transform: translateX(-100%);
-}
-
 .btn-export {
     width: 100%;
     background-color: rgba(255, 255, 255, 0.1);
@@ -118,32 +114,6 @@ body {
     width: 100%;
     border: none;
     transition: all 0.3s;
-}
-
-.btn-toggle {
-    display: none;
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    padding: 0.25rem;
-    z-index: 1001;
-}
-
-.btn-close-sidebar {
-    display: none;
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    padding: 0.25rem;
-    z-index: 1001;
 }
 
 /* Main Content Styles */
@@ -455,28 +425,13 @@ main {
     }
 }
 
-@media (max-width: 768px) {
+@media (min-width: 768px) {
     .sidebar {
-        transform: translateX(-100%);
         width: var(--sidebar-width);
     }
     
-    .sidebar.active {
-        transform: translateX(0);
-    }
-    
-    .btn-toggle {
-        display: block;
-    }
-    
-    .btn-close-sidebar {
-        display: block;
-    }
-    
     main {
-        margin-left: 0;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        margin-left: var(--sidebar-width);
     }
 }
 
@@ -549,3 +504,5 @@ main {
 ::-webkit-scrollbar-thumb:hover {
     background: #2e59d9;
 }
+
+
