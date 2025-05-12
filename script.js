@@ -11,21 +11,16 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const analytics = firebase.analytics();
 
+// Tampilkan modal login saat halaman dimuat
 document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Tampilkan modal login jika perlu
-        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-        
-        console.log("App initialized"); // Debug log
-    } catch (error) {
-        console.error("Initialization error:", error);
-        alert("Error initializing app: " + error.message);
-    }
+  const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+  loginModal.show();
 });
+
 
 // DOM Elements
 const appContainer = document.getElementById('app-container');
@@ -285,12 +280,6 @@ function handleLogin(e) {
                 localStorage.removeItem('rememberedEmail');
             }
 
-            // Tutup modal login sebelum login
-            const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-            if (loginModal) {
-                loginModal.hide();
-            }
-
             loginUser(email);
         });
     });
@@ -332,11 +321,7 @@ function handleRegister(e) {
         // Save to Firebase
         saveUserData(email, userData)
             .then(() => {
-                // Tutup modal register sebelum login
-                const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                if (registerModal) {
-                    registerModal.hide();
-                }
+                registerModal.hide();
                 loginUser(email);
             })
             .catch((error) => {
@@ -347,7 +332,6 @@ function handleRegister(e) {
 }
 
 // Login user
-function loginUser(email) {
 function loginUser(email) {
     loadUserData(email, (userData) => {
         if (!userData) {
@@ -363,6 +347,7 @@ function loginUser(email) {
         // Update UI
         document.getElementById('sidebar-username').textContent = userData.name;
         appContainer.classList.remove('d-none');
+        loginModal.hide();
         
         // Initialize UI
         renderCategoriesDropdown();
