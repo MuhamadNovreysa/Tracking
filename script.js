@@ -23,13 +23,10 @@ try {
 
 // Tampilkan modal login saat halaman dimuat
 document.addEventListener('DOMContentLoaded', function() {
-    // Inisialisasi modal
-    const loginModalElement = document.getElementById('loginModal');
-    if (loginModalElement) {
-        const loginModal = new bootstrap.Modal(loginModalElement);
-        loginModal.show();
-    }
+  const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+  loginModal.show();
 });
+
 
 
 // DOM Elements
