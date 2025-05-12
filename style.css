@@ -19,6 +19,26 @@ body {
     overflow-x: hidden;
 }
 
+/* Login Styles */
+/* Login Styles */
+#loginModal .modal-content, #registerModal .modal-content {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+#loginModal .modal-header, #registerModal .modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+#loginModal .modal-body, #registerModal .modal-body {
+    padding-top: 0;
+}
+
+.btn-link {
+    text-decoration: none;
+}
+
 /* Sidebar Styles */
 .sidebar {
     background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
@@ -40,6 +60,12 @@ body {
     font-weight: 700;
     margin-bottom: 0;
     color: white;
+}
+
+.user-info {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
 }
 
 .sidebar .nav-link {
@@ -82,6 +108,12 @@ body {
 
 .btn-export:hover {
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-logout {
+    width: 100%;
+    border: none;
+    transition: all 0.3s;
 }
 
 /* Main Content Styles */
