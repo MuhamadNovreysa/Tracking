@@ -51,7 +51,7 @@ body {
     transition: transform 0.3s ease-in-out;
 }
 
-sidebar-toggle {
+.sidebar-toggle {
     position: fixed;
     top: 10px;
     left: 10px;
@@ -67,6 +67,10 @@ sidebar-toggle {
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.sidebar-toggle .bx-menu {
+    font-size: 1.5rem; /* Pastikan ukuran ikon sesuai */
 }
 
 
@@ -143,9 +147,8 @@ sidebar-toggle {
 
 /* Main Content Styles */
 main {
-    margin-left: var(--sidebar-width);
+    margin-left: 0; /* Default untuk mobile (sidebar tersembunyi) */
     padding-top: 1rem;
-    transition: all 0.3s;
     transition: margin-left 0.3s ease-in-out;
 }
 
@@ -442,14 +445,14 @@ main {
     .sidebar-toggle {
         display: none !important;
     }
-    
+     
     
     .sidebar.active {
         margin-left: 0;
     }
     
     main {
-        margin-left: 0;
+        margin-left: var(--sidebar-width);
     }
     
     .summary-card {
@@ -476,7 +479,14 @@ main {
         margin-left: var(--sidebar-width);
     }
 }
-
+@media (max-width: 767px) {
+    .sidebar-toggle {
+        display: flex !important; /* Tampilkan tombol di mobile */
+    }
+     .sidebar:not(.collapsed) + main {
+        margin-left: var(--sidebar-width); /* Untuk mobile saat sidebar terbuka */
+    }
+}
 /* Animation */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
