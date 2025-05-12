@@ -265,6 +265,22 @@ function setupEventListeners() {
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
 });
+  // Sidebar Toggle
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
+
+    closeSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+    });
+
+    // Tutup sidebar kalau klik di luar
+    document.addEventListener('click', (e) => {
+        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+    });
+
   
 }
 
