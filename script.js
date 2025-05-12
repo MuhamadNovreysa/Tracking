@@ -1882,5 +1882,3 @@ function resetAllData() {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
-
-Ini full js gua setelah gua perbaiki, langsung testing aja ya bro
