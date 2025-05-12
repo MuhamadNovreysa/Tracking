@@ -45,10 +45,19 @@ body {
     color: white;
     height: 100vh;
     position: fixed;
+    top: 0;
+    left: 0;
     padding: 0;
     z-index: 1000;
-    transition: all 0.3s;
+    transition: transform 0.3s ease-in-out;
+    width: var(--sidebar-width);
+    transform: translateX(-100%); /* Default hidden di mobile */
 }
+
+.sidebar.active {
+    transform: translateX(0); /* Muncul pas active */
+}
+
 
 .sidebar-header {
     padding: 1.5rem 1.5rem 0.5rem;
@@ -150,9 +159,10 @@ body {
 main {
     margin-left: var(--sidebar-width);
     padding-top: 1rem;
-    transition: all 0.3s;
+    transition: all 0.3s ease-in-out;
+    min-height: 100vh;
+    z-index: 900; /* Di bawah sidebar */
 }
-
 /* Summary Cards */
 .summary-card {
     border-radius: 0.5rem;
@@ -428,37 +438,7 @@ main {
 /* Responsive Styles */
 @media (max-width: 768px) {
     .sidebar {
-        margin-left: -100%;
-        width: var(--sidebar-width);
-    }
-    
-    .sidebar.active {
-        margin-left: 0;
-    }
-    
-    main {
-        margin-left: 0;
-    }
-    
-    .summary-card {
-        margin-bottom: 1rem;
-    }
-    
-    .row {
-        margin-left: -0.5rem;
-        margin-right: -0.5rem;
-    }
-    
-    .col-md-4, .col-md-6, .col-md-8 {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .sidebar {
         transform: translateX(-100%);
-        width: var(--sidebar-width);
     }
     
     .sidebar.active {
@@ -477,6 +457,17 @@ main {
         margin-left: 0;
         padding-left: 1rem;
         padding-right: 1rem;
+    }
+    
+    /* Tambahin overlay pas sidebar aktif */
+    .sidebar.active + main {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5); /* Overlay gelap */
+        overflow: hidden; /* Cegah scroll pas sidebar terbuka */
     }
 }
 
