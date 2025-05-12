@@ -11,14 +11,24 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-const analytics = firebase.analytics();
+// Initialize Firebase
+try {
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const analytics = firebase.analytics();
+    console.log("Firebase initialized successfully");
+} catch (error) {
+    console.error("Firebase initialization error:", error);
+}
 
 // Tampilkan modal login saat halaman dimuat
 document.addEventListener('DOMContentLoaded', function() {
-  const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-  loginModal.show();
+    // Inisialisasi modal
+    const loginModalElement = document.getElementById('loginModal');
+    if (loginModalElement) {
+        const loginModal = new bootstrap.Modal(loginModalElement);
+        loginModal.show();
+    }
 });
 
 
@@ -347,7 +357,12 @@ function loginUser(email) {
         // Update UI
         document.getElementById('sidebar-username').textContent = userData.name;
         appContainer.classList.remove('d-none');
-        loginModal.hide();
+        
+        // Tutup modal login
+        const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+        if (loginModal) {
+            loginModal.hide();
+        }
         
         // Initialize UI
         renderCategoriesDropdown();
