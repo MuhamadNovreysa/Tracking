@@ -356,11 +356,15 @@ function loginUser(email) {
         document.getElementById('sidebar-username').textContent = userData.name;
         appContainer.classList.remove('d-none');
 
-        // Pastikan modal ditutup dan backdrop dihapus
+        // Pastikan modal ditutup dan backdrop dihapus dengan log
+        console.log('Hiding login modal...');
         loginModal.hide();
+        console.log('Modal hidden, removing backdrop...');
         document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        console.log('Backdrop removed, resetting body...');
         document.body.classList.remove('modal-open');
-        document.body.style.overflow = ''; // Reset overflow
+        document.body.style.overflow = '';
+        console.log('Body reset, UI initialized');
 
         // Initialize UI
         renderCategoriesDropdown();
