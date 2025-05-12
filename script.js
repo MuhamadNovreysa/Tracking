@@ -1,3 +1,19 @@
+    // Initialize Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBcm-2OiIwpaRP7q-gwJT7DdEV0yKhz31s",
+  authDomain: "tracking-bd294.firebaseapp.com",
+  databaseURL: "https://tracking-bd294-default-rtdb.firebaseio.com",
+  projectId: "tracking-bd294",
+  storageBucket: "tracking-bd294.firebasestorage.app",
+  messagingSenderId: "754982495359",
+  appId: "1:754982495359:web:d4ba6ee8b5ac5abb198b4a",
+  measurementId: "G-8VTS9EYX52"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
 // DOM Elements
 const appContainer = document.getElementById('app-container');
 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
@@ -51,13 +67,17 @@ let state = {
 
 // Initialize the app
 function init() {
-    // Load data from localStorage
-    loadFromLocalStorage();
-    
     // Check if user is logged in
     const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail && state.users[rememberedEmail]) {
-        loginUser(rememberedEmail);
+    if (rememberedEmail) {
+        checkUserExists(rememberedEmail, (exists) => {
+            if (exists) {
+                loginUser(rememberedEmail);
+            } else {
+                localStorage.removeItem('rememberedEmail');
+                loginModal.show();
+            }
+        });
     } else {
         loginModal.show();
     }
@@ -66,25 +86,47 @@ function init() {
     setupEventListeners();
 }
 
-// Load data from localStorage
-function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('budgetGeniusData');
-    if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        state.users = parsedData.users || {};
-        // Initialize default categories if none exist
-        if (Object.keys(state.users).length > 0 && !parsedData.categories) {
-            initializeDefaultCategories();
-        }
-    } else {
-        // Initialize default categories for new installation
-        initializeDefaultCategories();
-    }
+// Check if user exists in Firebase
+function checkUserExists(email, callback) {
+    database.ref('users/' + encodeEmail(email)).once('value')
+        .then((snapshot) => {
+            callback(snapshot.exists());
+        });
 }
 
-// Initialize default categories
-function initializeDefaultCategories() {
-    state.categories = [
+// Encode email for Firebase key
+function encodeEmail(email) {
+    return email.replace(/\./g, ',');
+}
+
+// Decode email from Firebase key
+function decodeEmail(encodedEmail) {
+    return encodedEmail.replace(/,/g, '.');
+}
+
+// Load user data from Firebase
+function loadUserData(email, callback) {
+    const encodedEmail = encodeEmail(email);
+    
+    database.ref('users/' + encodedEmail).once('value')
+        .then((snapshot) => {
+            const userData = snapshot.val();
+            if (userData) {
+                // Initialize default categories if none exist
+                if (!userData.categories) {
+                    userData.categories = getDefaultCategories();
+                    database.ref('users/' + encodedEmail + '/categories').set(userData.categories);
+                }
+                callback(userData);
+            } else {
+                callback(null);
+            }
+        });
+}
+
+// Get default categories
+function getDefaultCategories() {
+    return [
         { id: 1, name: 'Gaji', type: 'income', icon: 'money-bill-wave', color: '#28a745' },
         { id: 2, name: 'Freelance', type: 'income', icon: 'laptop-code', color: '#17a2b8' },
         { id: 3, name: 'Makanan', type: 'expense', icon: 'utensils', color: '#dc3545' },
@@ -94,13 +136,10 @@ function initializeDefaultCategories() {
     ];
 }
 
-// Save data to localStorage
-function saveToLocalStorage() {
-    const dataToSave = {
-        users: state.users,
-        categories: state.categories
-    };
-    localStorage.setItem('budgetGeniusData', JSON.stringify(dataToSave));
+// Save user data to Firebase
+function saveUserData(email, data) {
+    const encodedEmail = encodeEmail(email);
+    return database.ref('users/' + encodedEmail).set(data);
 }
 
 // Setup event listeners
@@ -208,23 +247,34 @@ function handleLogin(e) {
     const password = document.getElementById('login-password').value;
     const rememberMe = document.getElementById('remember-me').checked;
 
-    if (!state.users[email]) {
-        alert('Email tidak terdaftar');
-        return;
-    }
+    // Check if user exists in Firebase
+    checkUserExists(email, (exists) => {
+        if (!exists) {
+            alert('Email tidak terdaftar');
+            return;
+        }
 
-    if (state.users[email].password !== password) {
-        alert('Password salah');
-        return;
-    }
+        // Load user data
+        loadUserData(email, (userData) => {
+            if (!userData) {
+                alert('Terjadi kesalahan saat memuat data pengguna');
+                return;
+            }
 
-    if (rememberMe) {
-        localStorage.setItem('rememberedEmail', email);
-    } else {
-        localStorage.removeItem('rememberedEmail');
-    }
+            if (userData.password !== password) {
+                alert('Password salah');
+                return;
+            }
 
-    loginUser(email);
+            if (rememberMe) {
+                localStorage.setItem('rememberedEmail', email);
+            } else {
+                localStorage.removeItem('rememberedEmail');
+            }
+
+            loginUser(email);
+        });
+    });
 }
 
 // Handle register
@@ -240,47 +290,65 @@ function handleRegister(e) {
         return;
     }
 
-    if (state.users[email]) {
-        alert('Email sudah terdaftar');
-        return;
-    }
+    // Check if user already exists
+    checkUserExists(email, (exists) => {
+        if (exists) {
+            alert('Email sudah terdaftar');
+            return;
+        }
 
-    // Create new user
-    state.users[email] = {
-        name,
-        email,
-        password,
-        currency: 'IDR',
-        monthlyBudget: 0,
-        savingsGoal: 20,
-        notificationsEnabled: true,
-        transactions: [],
-        categories: JSON.parse(JSON.stringify(state.categories)) // Copy default categories
-    };
+        // Create new user data
+        const userData = {
+            name,
+            email,
+            password,
+            currency: 'IDR',
+            monthlyBudget: 0,
+            savingsGoal: 20,
+            notificationsEnabled: true,
+            transactions: [],
+            categories: getDefaultCategories()
+        };
 
-    saveToLocalStorage();
-    registerModal.hide();
-    loginUser(email);
+        // Save to Firebase
+        saveUserData(email, userData)
+            .then(() => {
+                registerModal.hide();
+                loginUser(email);
+            })
+            .catch((error) => {
+                console.error('Error saving user data:', error);
+                alert('Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
+            });
+    });
 }
 
 // Login user
 function loginUser(email) {
-    state.currentUser = email;
-    state.transactions = state.users[email].transactions;
-    state.categories = state.users[email].categories;
-    
-    // Update UI
-    document.getElementById('sidebar-username').textContent = state.users[email].name;
-    appContainer.classList.remove('d-none');
-    loginModal.hide();
-    
-    // Initialize UI
-    renderCategoriesDropdown();
-    renderAllCategories();
-    updateDashboard();
-    renderRecentTransactions();
-    renderAllTransactions();
-    renderUserSettings();
+    loadUserData(email, (userData) => {
+        if (!userData) {
+            alert('Terjadi kesalahan saat memuat data pengguna');
+            return;
+        }
+
+        state.currentUser = email;
+        state.users[email] = userData;
+        state.transactions = userData.transactions || [];
+        state.categories = userData.categories || getDefaultCategories();
+        
+        // Update UI
+        document.getElementById('sidebar-username').textContent = userData.name;
+        appContainer.classList.remove('d-none');
+        loginModal.hide();
+        
+        // Initialize UI
+        renderCategoriesDropdown();
+        renderAllCategories();
+        updateDashboard();
+        renderRecentTransactions();
+        renderAllTransactions();
+        renderUserSettings();
+    });
 }
 
 // Handle logout
