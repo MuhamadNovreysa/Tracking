@@ -50,6 +50,23 @@ body {
     transition: transform 0.3s ease-in-out;
     transform: translateX(0);
 }
+#sidebar, .menu-box {
+    position: absolute;
+    top: 60px; /* Sesuaikan dengan tinggi header */
+    left: 0; /* Saat ini di kiri, kita ubah ke kanan */
+    width: 200px; /* Lebar sesuai kebutuhan */
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    /* Pindah ke kanan atas */
+    left: auto; /* Hapus posisi kiri */
+    right: 1rem; /* Posisi ke kanan */
+}
+
+
+
+
 
 .sidebar.collapsed {
     transform: translateX(-100%);
@@ -466,6 +483,10 @@ main {
     .col-md-4, .col-md-6, .col-md-8 {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
+    }
+    #sidebar, .menu-box {
+        right: 0.5rem; /* Sesuaikan padding di mobile */
+        width: 180px;
     }
 }
 
