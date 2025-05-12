@@ -169,6 +169,31 @@ function setupEventListeners() {
     });
     logoutBtn.addEventListener('click', handleLogout);
 
+// Sidebar Toggle
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+    });
+
+    closeSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+    });
+
+    // Tutup sidebar kalau klik di luar
+    document.addEventListener('click', (e) => {
+        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+    });
+
+    // Penanganan resize window
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768px) {
+            sidebar.classList.add('active'); // Muncul di desktop
+        } else {
+            sidebar.classList.remove('active'); // Hidden di mobile kecuali di-toggle
+        }
+    });
+  
     // Navigation
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -256,21 +281,6 @@ function setupEventListeners() {
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
 });
-// Sidebar Toggle
-    sidebarToggle.addEventListener('click', () => {
-        sidebar.classList.add('active');
-    });
-
-    closeSidebarBtn.addEventListener('click', () => {
-        sidebar.classList.remove('active');
-    });
-
-    // Tambahin event listener buat tutup sidebar kalau klik di luar
-    document.addEventListener('click', (e) => {
-        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains('active')) {
-            sidebar.classList.remove('active');
-        }
-    });
   
 }
 
