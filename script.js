@@ -354,7 +354,18 @@ function loginUser(email) {
 
         // Update UI
         document.getElementById('sidebar-username').textContent = userData.name;
-        appContainer.classList.remove('d-none');
+        const appContainer = document.getElementById('app-container');
+        const sidebar = document.getElementById('sidebar');
+        if (appContainer) {
+            appContainer.classList.remove('d-none');
+        } else {
+            console.error('app-container not found in DOM!');
+        }
+        if (sidebar) {
+            sidebar.classList.add('active'); // Ini yang bikin sidebar muncul di layar kecil
+        } else {
+            console.error('sidebar not found in DOM!');
+        }
 
         // Pastikan modal ditutup dan backdrop dihapus dengan log
         console.log('Hiding login modal...');
@@ -366,13 +377,14 @@ function loginUser(email) {
         document.body.style.overflow = '';
         console.log('Body reset, UI initialized');
 
-        // Initialize UI
+        // Initialize UI dan pindah ke dashboard
         renderCategoriesDropdown();
         renderAllCategories();
         updateDashboard();
         renderRecentTransactions();
         renderAllTransactions();
         renderUserSettings();
+        showPage('dashboard');
     });
 }
 
