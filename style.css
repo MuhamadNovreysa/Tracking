@@ -20,7 +20,6 @@ body {
 }
 
 /* Login Styles */
-/* Login Styles */
 #loginModal .modal-content, #registerModal .modal-content {
     border-radius: 0.5rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
@@ -44,11 +43,16 @@ body {
     background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
     color: white;
     height: 100vh;
+    width: var(--sidebar-width);
     position: fixed;
     padding: 0;
     z-index: 1000;
-    transition: all 0.3s;
     transition: transform 0.3s ease-in-out;
+    transform: translateX(0);
+}
+
+.sidebar.collapsed {
+    transform: translateX(-100%);
 }
 
 .sidebar-toggle {
@@ -70,9 +74,8 @@ body {
 }
 
 .sidebar-toggle .bx-menu {
-    font-size: 1.5rem; /* Pastikan ukuran ikon sesuai */
+    font-size: 1.5rem;
 }
-
 
 .sidebar-header {
     padding: 1.5rem 1.5rem 0.5rem;
@@ -122,11 +125,6 @@ body {
     width: 100%;
 }
 
-.sidebar.collapsed {
-    transform: translateX(-100%);
-}
-
-
 .btn-export {
     width: 100%;
     background-color: rgba(255, 255, 255, 0.1);
@@ -147,17 +145,9 @@ body {
 
 /* Main Content Styles */
 main {
-    margin-left: 0; /* Default untuk mobile (sidebar tersembunyi) */
+    margin-left: 0;
     padding-top: 1rem;
     transition: margin-left 0.3s ease-in-out;
-}
-
-.sidebar:not(.collapsed) + main {
-    margin-left: var(--sidebar-width);
-}
-
-.sidebar.collapsed + main {
-    margin-left: 0;
 }
 
 /* Summary Cards */
@@ -433,60 +423,52 @@ main {
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
+@media (min-width: 768px) {
     .sidebar {
-        margin-left: -100%;
         width: var(--sidebar-width);
+        transform: translateX(0);
     }
     .sidebar.collapsed {
         transform: translateX(0);
     }
-    
-    .sidebar-toggle {
-        display: none !important;
-    }
-     
-    
-    .sidebar.active {
-        margin-left: 0;
-    }
-    
     main {
         margin-left: var(--sidebar-width);
     }
-    
+    .sidebar-toggle {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .sidebar {
+        width: var(--sidebar-width);
+        transform: translateX(-100%);
+    }
+    .sidebar:not(.collapsed) {
+        transform: translateX(0);
+    }
+    .sidebar-toggle {
+        display: flex !important;
+    }
+    .sidebar:not(.collapsed) + main {
+        margin-left: var(--sidebar-width);
+    }
+    .sidebar.collapsed + main {
+        margin-left: 0;
+    }
     .summary-card {
         margin-bottom: 1rem;
     }
-    
     .row {
         margin-left: -0.5rem;
         margin-right: -0.5rem;
     }
-    
     .col-md-4, .col-md-6, .col-md-8 {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
     }
 }
 
-@media (min-width: 768px) {
-    .sidebar {
-        width: var(--sidebar-width);
-    }
-    
-    main {
-        margin-left: var(--sidebar-width);
-    }
-}
-@media (max-width: 767px) {
-    .sidebar-toggle {
-        display: flex !important; /* Tampilkan tombol di mobile */
-    }
-     .sidebar:not(.collapsed) + main {
-        margin-left: var(--sidebar-width); /* Untuk mobile saat sidebar terbuka */
-    }
-}
 /* Animation */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -556,5 +538,3 @@ main {
 ::-webkit-scrollbar-thumb:hover {
     background: #2e59d9;
 }
-
-
