@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
   loginModal.show();
 });
 
-
 // DOM Elements
 const appContainer = document.getElementById('app-container');
 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
@@ -75,6 +74,17 @@ let state = {
 
 // Initialize the app
 function init() {
+    // Coba load dari localStorage dulu
+    const savedState = localStorage.getItem('appState');
+    if (savedState) {
+        state = JSON.parse(savedState);
+        if (state.currentUser) {
+            loginUser(state.currentUser);
+            return;
+        }
+    }
+
+    // Kalau ga ada di localStorage, cek Firebase
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
         checkUserExists(rememberedEmail, (exists) => {
@@ -131,6 +141,11 @@ function loadUserData(email, callback) {
             } else {
                 callback(null);
             }
+        })
+        .catch((error) => {
+            console.error('Error loading user data:', error);
+            alert('Gagal memuat data pengguna. Periksa koneksi internet Anda.');
+            callback(null);
         });
 }
 
@@ -150,6 +165,14 @@ function getDefaultCategories() {
 function saveUserData(email, data) {
     const encodedEmail = encodeEmail(email);
     return database.ref('users/' + encodedEmail).set(data);
+}
+
+// Save state to localStorage and sync to Firebase
+function saveToLocalStorage() {
+    localStorage.setItem('appState', JSON.stringify(state));
+    if (state.currentUser) {
+        saveUserData(state.currentUser, state.users[state.currentUser]);
+    }
 }
 
 // Setup event listeners
@@ -249,11 +272,11 @@ function setupEventListeners() {
     accountSettingsForm.addEventListener('submit', saveAccountSettings);
     budgetSettingsForm.addEventListener('submit', saveBudgetSettings);
 
-  document.getElementById('loginModal').addEventListener('hidden.bs.modal', function () {
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-});
+    document.getElementById('loginModal').addEventListener('hidden.bs.modal', function () {
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+    });
 }
 
 // Handle login
@@ -391,6 +414,7 @@ function loginUser(email) {
 // Handle logout
 function handleLogout() {
     state.currentUser = null;
+    localStorage.removeItem('appState'); // Hapus data di localStorage
     appContainer.classList.add('d-none');
     loginModal.show();
 }
@@ -513,8 +537,9 @@ function saveTransaction() {
 
     // Save to user data
     state.users[state.currentUser].transactions = state.transactions;
+    saveUserData(state.currentUser, state.users[state.currentUser]);
     saveToLocalStorage();
-
+  
     transactionModal.hide();
     updateDashboard();
     renderRecentTransactions();
@@ -555,6 +580,7 @@ function saveCategory() {
 
     // Save to user data
     state.users[state.currentUser].categories = state.categories;
+    saveUserData(state.currentUser, state.users[state.currentUser]);
     saveToLocalStorage();
 
     categoryModal.hide();
@@ -977,7 +1003,7 @@ function renderAllTransactions(page = 1, perPage = 10) {
         const prevLi = document.createElement('li');
         prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
         prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Previous" data-page="${page - 1}">
-            <span aria-hidden="true">&laquo;</span>
+            <span aria-hidden="true">«</span>
         </a>`;
         pagination.appendChild(prevLi);
         
@@ -993,7 +1019,7 @@ function renderAllTransactions(page = 1, perPage = 10) {
         const nextLi = document.createElement('li');
         nextLi.className = `page-item ${page === totalPages ? 'disabled' : ''}`;
         nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Next" data-page="${page + 1}">
-            <span aria-hidden="true">&raquo;</span>
+            <span aria-hidden="true">»</span>
         </a>`;
         pagination.appendChild(nextLi);
         
@@ -1843,7 +1869,7 @@ function resetAllData() {
     state.transactions = [];
     state.categories = state.users[state.currentUser].categories;
     
-    // Save to localStorage
+    // Save to localStorage and Firebase
     saveToLocalStorage();
     
     // Update UI
@@ -1855,5 +1881,6 @@ function resetAllData() {
     
     alert('Semua data telah direset ke kondisi awal');
 }
+
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
