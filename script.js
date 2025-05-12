@@ -14,25 +14,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-      
-        // Tampilkan modal login jika perlu
-        const rememberedEmail = localStorage.getItem('rememberedEmail');
-        if (!rememberedEmail) {
-            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-            loginModal.show();
-        }
-        
-        // Inisialisasi aplikasi
-        init();
-    } catch (error) {
-        console.error("Initialization error:", error);
-        // Fallback: Tampilkan modal login jika inisialisasi gagal
-        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-    }
-});
+document.addEventListener('DOMContentLoaded', function() {init()}) ;
+
 
 
 // DOM Elements
