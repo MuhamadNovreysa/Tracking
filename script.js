@@ -11,6 +11,28 @@ const firebaseConfig = {
 };
 
 
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Firebase
+    try {
+        firebase.initializeApp(firebaseConfig);
+        window.database = firebase.database();
+        window.analytics = firebase.analytics();
+        console.log("Firebase initialized successfully");
+        
+        // Tampilkan modal login
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (!rememberedEmail) {
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    }
+
+        
+        // Inisialisasi aplikasi
+        init();
+    } catch (error) {
+        console.error("Firebase initialization error:", error);
+    }
+});
 
 
 
@@ -1830,25 +1852,3 @@ function resetAllData() {
 }
 
 // Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Firebase
-    try {
-        firebase.initializeApp(firebaseConfig);
-        window.database = firebase.database();
-        window.analytics = firebase.analytics();
-        console.log("Firebase initialized successfully");
-        
-        // Tampilkan modal login
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (!rememberedEmail) {
-        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-    }
-
-        
-        // Inisialisasi aplikasi
-        init();
-    } catch (error) {
-        console.error("Firebase initialization error:", error);
-    }
-});
