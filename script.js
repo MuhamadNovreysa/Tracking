@@ -57,6 +57,8 @@ const refreshInsightsBtn = document.getElementById('refresh-insights');
 const resetAllDataBtn = document.getElementById('reset-all-data');
 const accountSettingsForm = document.getElementById('account-settings-form');
 const budgetSettingsForm = document.getElementById('budget-settings-form');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const closeSidebarBtn = document.getElementById('close-sidebar');
 
 // Chart instances
 let spendingChart, categoryChart, comparisonChart, trendChart;
@@ -254,6 +256,22 @@ function setupEventListeners() {
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
 });
+// Sidebar Toggle
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.add('active');
+    });
+
+    closeSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.remove('active');
+    });
+
+    // Tambahin event listener buat tutup sidebar kalau klik di luar
+    document.addEventListener('click', (e) => {
+        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+    });
+  
 }
 
 // Handle login
@@ -367,6 +385,12 @@ function loginUser(email) {
             console.error('sidebar not found in DOM!');
         }
 
+if (window.innerWidth >= 768px) {
+        sidebar.classList.add('active');
+    } else {
+        sidebar.classList.remove('active');
+    }
+      
         // Pastikan modal ditutup dan backdrop dihapus dengan log
         console.log('Hiding login modal...');
         loginModal.hide();
