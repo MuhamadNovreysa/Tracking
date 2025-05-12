@@ -51,11 +51,6 @@ body {
     transform: translateX(0);
 }
 
-
-
-
-
-
 .sidebar.collapsed {
     transform: translateX(-100%);
 }
