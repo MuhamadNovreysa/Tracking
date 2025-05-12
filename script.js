@@ -75,7 +75,6 @@ let state = {
 
 // Initialize the app
 function init() {
-    // Check if user is logged in
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
         checkUserExists(rememberedEmail, (exists) => {
@@ -89,8 +88,7 @@ function init() {
     } else {
         loginModal.show();
     }
-    
-    // Setup event listeners
+
     setupEventListeners();
 }
 
@@ -99,6 +97,10 @@ function checkUserExists(email, callback) {
     database.ref('users/' + encodeEmail(email)).once('value')
         .then((snapshot) => {
             callback(snapshot.exists());
+        })
+        .catch((error) => {
+            console.error('Error checking user:', error);
+            callback(false); // Default ke false kalau error
         });
 }
 
@@ -246,6 +248,12 @@ function setupEventListeners() {
     // Settings forms
     accountSettingsForm.addEventListener('submit', saveAccountSettings);
     budgetSettingsForm.addEventListener('submit', saveBudgetSettings);
+
+  document.getElementById('loginModal').addEventListener('hidden.bs.modal', function () {
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+});
 }
 
 // Handle login
@@ -343,12 +351,17 @@ function loginUser(email) {
         state.users[email] = userData;
         state.transactions = userData.transactions || [];
         state.categories = userData.categories || getDefaultCategories();
-        
+
         // Update UI
         document.getElementById('sidebar-username').textContent = userData.name;
         appContainer.classList.remove('d-none');
+
+        // Pastikan modal ditutup dan backdrop dihapus
         loginModal.hide();
-        
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = ''; // Reset overflow
+
         // Initialize UI
         renderCategoriesDropdown();
         renderAllCategories();
