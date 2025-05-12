@@ -10,21 +10,6 @@ const firebaseConfig = {
   measurementId: "G-8VTS9EYX52"
 };
 
-// Initialize Firebase
-// Initialize Firebase
-try {
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const analytics = firebase.analytics();
-    console.log("Firebase initialized successfully");
-} catch (error) {
-    console.error("Firebase initialization error:", error);
-}
-// Tampilkan modal login saat halaman dimuat
-document.addEventListener('DOMContentLoaded', function() {
-  const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-  loginModal.show();
-});
 
 
 
@@ -287,6 +272,12 @@ function handleLogin(e) {
                 localStorage.removeItem('rememberedEmail');
             }
 
+            // Tutup modal login sebelum login
+            const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            if (loginModal) {
+                loginModal.hide();
+            }
+
             loginUser(email);
         });
     });
@@ -328,7 +319,11 @@ function handleRegister(e) {
         // Save to Firebase
         saveUserData(email, userData)
             .then(() => {
-                registerModal.hide();
+                // Tutup modal register sebelum login
+                const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                if (registerModal) {
+                    registerModal.hide();
+                }
                 loginUser(email);
             })
             .catch((error) => {
@@ -339,6 +334,7 @@ function handleRegister(e) {
 }
 
 // Login user
+function loginUser(email) {
 function loginUser(email) {
     loadUserData(email, (userData) => {
         if (!userData) {
@@ -354,12 +350,6 @@ function loginUser(email) {
         // Update UI
         document.getElementById('sidebar-username').textContent = userData.name;
         appContainer.classList.remove('d-none');
-        
-        // Tutup modal login
-        const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-        if (loginModal) {
-            loginModal.hide();
-        }
         
         // Initialize UI
         renderCategoriesDropdown();
@@ -1840,4 +1830,25 @@ function resetAllData() {
 }
 
 // Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Firebase
+    try {
+        firebase.initializeApp(firebaseConfig);
+        window.database = firebase.database();
+        window.analytics = firebase.analytics();
+        console.log("Firebase initialized successfully");
+        
+        // Tampilkan modal login
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (!rememberedEmail) {
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    }
+
+        
+        // Inisialisasi aplikasi
+        init();
+    } catch (error) {
+        console.error("Firebase initialization error:", error);
+    }
+});
