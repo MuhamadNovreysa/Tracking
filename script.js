@@ -14,9 +14,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
-document.addEventListener('DOMContentLoaded', function() {init()}) ;
-
-
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Tampilkan modal login jika perlu
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+        
+        console.log("App initialized"); // Debug log
+    } catch (error) {
+        console.error("Initialization error:", error);
+        alert("Error initializing app: " + error.message);
+    }
+});
 
 // DOM Elements
 const appContainer = document.getElementById('app-container');
@@ -1834,3 +1843,4 @@ function resetAllData() {
 }
 
 // Initialize the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
