@@ -10,30 +10,28 @@ const firebaseConfig = {
   measurementId: "G-8VTS9EYX52"
 };
 
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Firebase
     try {
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        window.database = firebase.database();
-        window.analytics = firebase.analytics();
         console.log("Firebase initialized successfully");
         
-        // Tampilkan modal login
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (!rememberedEmail) {
-        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-    }
-
+        // Tampilkan modal login jika perlu
+        const rememberedEmail = localStorage.getItem('rememberedEmail');
+        if (!rememberedEmail) {
+            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loginModal.show();
+        }
         
         // Inisialisasi aplikasi
         init();
     } catch (error) {
-        console.error("Firebase initialization error:", error);
+        console.error("Initialization error:", error);
+        // Fallback: Tampilkan modal login jika inisialisasi gagal
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
     }
 });
-
 
 
 // DOM Elements
