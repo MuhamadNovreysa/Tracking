@@ -76,21 +76,29 @@ let state = {
 };
 
 // Initialize the app
+// Initialize the app
 function init() {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-        checkUserExists(rememberedEmail, (exists) => {
-            if (exists) {
-                loginUser(rememberedEmail);
-            } else {
-                localStorage.removeItem('rememberedEmail');
-                loginModal.show();
-            }
-        });
-    } else {
-        loginModal.show();
-    }
+    console.log('Initializing app...');
 
+    // Hardcode user data untuk tes
+    const email = 'test@example.com';
+    state.currentUser = email;
+    state.users[email] = {
+        name: 'Test User',
+        email: email,
+        password: 'password123',
+        currency: 'IDR',
+        monthlyBudget: 0,
+        savingsGoal: 20,
+        notificationsEnabled: true,
+        transactions: [],
+        categories: getDefaultCategories()
+    };
+
+    console.log('User data prepared:', state.users[email]);
+    loginUser(email);
+
+    console.log('Setting up event listeners...');
     setupEventListeners();
 }
 
@@ -368,58 +376,57 @@ function handleRegister(e) {
 }
 
 // Login user
+// Login user
 function loginUser(email) {
-    loadUserData(email, (userData) => {
-        if (!userData) {
-            alert('Terjadi kesalahan saat memuat data pengguna');
-            return;
-        }
-
-        state.currentUser = email;
-        state.users[email] = userData;
-        state.transactions = userData.transactions || [];
-        state.categories = userData.categories || getDefaultCategories();
-
-        // Update UI
-        document.getElementById('sidebar-username').textContent = userData.name;
-        const appContainer = document.getElementById('app-container');
-        const sidebar = document.getElementById('sidebar');
-        if (appContainer) {
-            appContainer.classList.remove('d-none');
-        } else {
-            console.error('app-container not found in DOM!');
-        }
-        if (sidebar) {
-            sidebar.classList.add('active'); // Ini yang bikin sidebar muncul di layar kecil
-        } else {
-            console.error('sidebar not found in DOM!');
-        }
-
-if (window.innerWidth >= 768px) {
-        sidebar.classList.add('active');
-    } else {
-        sidebar.classList.remove('active');
+    const userData = state.users[email];
+    if (!userData) {
+        console.error('User data not found, showing login modal');
+        loginModal.show();
+        return;
     }
-      
-        // Pastikan modal ditutup dan backdrop dihapus dengan log
-        console.log('Hiding login modal...');
-        loginModal.hide();
-        console.log('Modal hidden, removing backdrop...');
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-        console.log('Backdrop removed, resetting body...');
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        console.log('Body reset, UI initialized');
 
-        // Initialize UI dan pindah ke dashboard
-        renderCategoriesDropdown();
-        renderAllCategories();
-        updateDashboard();
-        renderRecentTransactions();
-        renderAllTransactions();
-        renderUserSettings();
-        showPage('dashboard');
-    });
+    state.currentUser = email;
+    state.transactions = userData.transactions || [];
+    state.categories = userData.categories || getDefaultCategories();
+
+    const appContainer = document.getElementById('app-container');
+    const sidebar = document.getElementById('sidebar');
+    if (appContainer) {
+        appContainer.classList.remove('d-none');
+    } else {
+        console.error('app-container not found in DOM!');
+        document.body.innerHTML = '<h1>Error: App container not found. Please reload the page.</h1>';
+    }
+
+    if (sidebar) {
+        if (window.innerWidth >= 768px) {
+            sidebar.classList.add('active');
+        } else {
+            sidebar.classList.remove('active');
+        }
+    } else {
+        console.error('sidebar not found in DOM!');
+    }
+
+    // Pastikan modal ditutup dan backdrop dihapus
+    console.log('Hiding login modal...');
+    loginModal.hide();
+    console.log('Modal hidden, removing backdrop...');
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    console.log('Backdrop removed, resetting body...');
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    console.log('Body reset, UI initialized');
+
+    // Update UI
+    document.getElementById('sidebar-username').textContent = userData.name;
+    renderCategoriesDropdown();
+    renderAllCategories();
+    updateDashboard();
+    renderRecentTransactions();
+    renderAllTransactions();
+    renderUserSettings();
+    showPage('dashboard');
 }
 
 // Handle logout
