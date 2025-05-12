@@ -20,7 +20,11 @@ try {
 } catch (error) {
     console.error("Firebase initialization error:", error);
 }
-
+// Tampilkan modal login saat halaman dimuat
+document.addEventListener('DOMContentLoaded', function() {
+  const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+  loginModal.show();
+});
 
 
 
@@ -1834,10 +1838,6 @@ function resetAllData() {
     
     alert('Semua data telah direset ke kondisi awal');
 }
-// Tampilkan modal login saat halaman dimuat
-document.addEventListener('DOMContentLoaded', function() {
-  const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-  loginModal.show();
-});
+
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
