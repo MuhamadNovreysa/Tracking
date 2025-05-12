@@ -1,18 +1,26 @@
-    // Initialize Firebase
+// Initialize Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBcm-2OiIwpaRP7q-gwJT7DdEV0yKhz31s",
   authDomain: "tracking-bd294.firebaseapp.com",
   databaseURL: "https://tracking-bd294-default-rtdb.firebaseio.com",
   projectId: "tracking-bd294",
-  storageBucket: "tracking-bd294.firebasestorage.app",
+  storageBucket: "tracking-bd294.appspot.com",
   messagingSenderId: "754982495359",
   appId: "1:754982495359:web:d4ba6ee8b5ac5abb198b4a",
   measurementId: "G-8VTS9EYX52"
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const analytics = firebase.analytics();
+
+// Tampilkan modal login saat halaman dimuat
+document.addEventListener('DOMContentLoaded', function() {
+  const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+  loginModal.show();
+});
+
 
 // DOM Elements
 const appContainer = document.getElementById('app-container');
