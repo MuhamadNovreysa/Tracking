@@ -10,12 +10,13 @@ const firebaseConfig = {
   measurementId: "G-8VTS9EYX52"
 };
 
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        console.log("Firebase initialized successfully");
-        
+      
         // Tampilkan modal login jika perlu
         const rememberedEmail = localStorage.getItem('rememberedEmail');
         if (!rememberedEmail) {
