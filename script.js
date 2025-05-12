@@ -1855,39 +1855,5 @@ function resetAllData() {
     
     alert('Semua data telah direset ke kondisi awal');
 }
-// Tambahkan di file JavaScript Anda
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.querySelector('.sidebar-toggle');
-    
-    // Inisialisasi state sidebar
-    sidebar.classList.add('collapsed');
-    
-    // Toggle sidebar saat tombol diklik
-    sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('collapsed');
-    });
-    
-    // Tutup sidebar saat mengklik item menu di mobile
-    if (window.innerWidth < 768) {
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                sidebar.classList.add('collapsed');
-            });
-        });
-    }
-    
-    // Responsif: otomatis buka sidebar di desktop
-    function handleResize() {
-        if (window.innerWidth >= 768) {
-            sidebar.classList.remove('collapsed');
-        } else {
-            sidebar.classList.add('collapsed');
-        }
-    }
-    
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Panggil sekali saat pertama load
-});
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
