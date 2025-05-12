@@ -76,29 +76,21 @@ let state = {
 };
 
 // Initialize the app
-// Initialize the app
 function init() {
-    console.log('Initializing app...');
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+        checkUserExists(rememberedEmail, (exists) => {
+            if (exists) {
+                loginUser(rememberedEmail);
+            } else {
+                localStorage.removeItem('rememberedEmail');
+                loginModal.show();
+            }
+        });
+    } else {
+        loginModal.show();
+    }
 
-    // Hardcode user data untuk tes
-    const email = 'test@example.com';
-    state.currentUser = email;
-    state.users[email] = {
-        name: 'Test User',
-        email: email,
-        password: 'password123',
-        currency: 'IDR',
-        monthlyBudget: 0,
-        savingsGoal: 20,
-        notificationsEnabled: true,
-        transactions: [],
-        categories: getDefaultCategories()
-    };
-
-    console.log('User data prepared:', state.users[email]);
-    loginUser(email);
-
-    console.log('Setting up event listeners...');
     setupEventListeners();
 }
 
@@ -177,15 +169,6 @@ function setupEventListeners() {
     });
     logoutBtn.addEventListener('click', handleLogout);
 
-    // Penanganan resize window
-    window.addEventListener('resize', () => {
-        if (window.innerWidth >= 768px) {
-            sidebar.classList.add('active'); // Muncul di desktop
-        } else {
-            sidebar.classList.remove('active'); // Hidden di mobile kecuali di-toggle
-        }
-    });
-  
     // Navigation
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -273,22 +256,21 @@ function setupEventListeners() {
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
 });
-  // Sidebar Toggle
+// Sidebar Toggle
     sidebarToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
+        sidebar.classList.add('active');
     });
 
     closeSidebarBtn.addEventListener('click', () => {
         sidebar.classList.remove('active');
     });
 
-    // Tutup sidebar kalau klik di luar
+    // Tambahin event listener buat tutup sidebar kalau klik di luar
     document.addEventListener('click', (e) => {
         if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target) && sidebar.classList.contains('active')) {
             sidebar.classList.remove('active');
         }
     });
-
   
 }
 
@@ -376,57 +358,58 @@ function handleRegister(e) {
 }
 
 // Login user
-// Login user
 function loginUser(email) {
-    const userData = state.users[email];
-    if (!userData) {
-        console.error('User data not found, showing login modal');
-        loginModal.show();
-        return;
-    }
-
-    state.currentUser = email;
-    state.transactions = userData.transactions || [];
-    state.categories = userData.categories || getDefaultCategories();
-
-    const appContainer = document.getElementById('app-container');
-    const sidebar = document.getElementById('sidebar');
-    if (appContainer) {
-        appContainer.classList.remove('d-none');
-    } else {
-        console.error('app-container not found in DOM!');
-        document.body.innerHTML = '<h1>Error: App container not found. Please reload the page.</h1>';
-    }
-
-    if (sidebar) {
-        if (window.innerWidth >= 768px) {
-            sidebar.classList.add('active');
-        } else {
-            sidebar.classList.remove('active');
+    loadUserData(email, (userData) => {
+        if (!userData) {
+            alert('Terjadi kesalahan saat memuat data pengguna');
+            return;
         }
+
+        state.currentUser = email;
+        state.users[email] = userData;
+        state.transactions = userData.transactions || [];
+        state.categories = userData.categories || getDefaultCategories();
+
+        // Update UI
+        document.getElementById('sidebar-username').textContent = userData.name;
+        const appContainer = document.getElementById('app-container');
+        const sidebar = document.getElementById('sidebar');
+        if (appContainer) {
+            appContainer.classList.remove('d-none');
+        } else {
+            console.error('app-container not found in DOM!');
+        }
+        if (sidebar) {
+            sidebar.classList.add('active'); // Ini yang bikin sidebar muncul di layar kecil
+        } else {
+            console.error('sidebar not found in DOM!');
+        }
+
+if (window.innerWidth >= 768px) {
+        sidebar.classList.add('active');
     } else {
-        console.error('sidebar not found in DOM!');
+        sidebar.classList.remove('active');
     }
+      
+        // Pastikan modal ditutup dan backdrop dihapus dengan log
+        console.log('Hiding login modal...');
+        loginModal.hide();
+        console.log('Modal hidden, removing backdrop...');
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        console.log('Backdrop removed, resetting body...');
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        console.log('Body reset, UI initialized');
 
-    // Pastikan modal ditutup dan backdrop dihapus
-    console.log('Hiding login modal...');
-    loginModal.hide();
-    console.log('Modal hidden, removing backdrop...');
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-    console.log('Backdrop removed, resetting body...');
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    console.log('Body reset, UI initialized');
-
-    // Update UI
-    document.getElementById('sidebar-username').textContent = userData.name;
-    renderCategoriesDropdown();
-    renderAllCategories();
-    updateDashboard();
-    renderRecentTransactions();
-    renderAllTransactions();
-    renderUserSettings();
-    showPage('dashboard');
+        // Initialize UI dan pindah ke dashboard
+        renderCategoriesDropdown();
+        renderAllCategories();
+        updateDashboard();
+        renderRecentTransactions();
+        renderAllTransactions();
+        renderUserSettings();
+        showPage('dashboard');
+    });
 }
 
 // Handle logout
@@ -1899,3 +1882,5 @@ function resetAllData() {
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
+
+Ini full js gua setelah gua perbaiki, langsung testing aja ya bro
