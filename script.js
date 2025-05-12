@@ -1,4 +1,13 @@
 // DOM Elements
+const appContainer = document.getElementById('app-container');
+const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const showRegisterBtn = document.getElementById('show-register');
+const showLoginBtn = document.getElementById('show-login');
+const logoutBtn = document.querySelector('.btn-logout');
+
 const sidebar = document.getElementById('sidebar');
 const mainContent = document.querySelector('main');
 const pageContents = document.querySelectorAll('.page-content');
@@ -19,23 +28,21 @@ const applyDateRangeBtn = document.getElementById('apply-date-range');
 const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
 const confirmActionBtn = document.getElementById('confirm-action');
 const exportAllDataBtn = document.getElementById('export-all-data');
+const exportReportBtn = document.getElementById('export-report-btn');
 const refreshInsightsBtn = document.getElementById('refresh-insights');
+const resetAllDataBtn = document.getElementById('reset-all-data');
+const accountSettingsForm = document.getElementById('account-settings-form');
+const budgetSettingsForm = document.getElementById('budget-settings-form');
 
 // Chart instances
 let spendingChart, categoryChart, comparisonChart, trendChart;
 
 // App State
 let state = {
+    currentUser: null,
+    users: {},
     transactions: [],
     categories: [],
-    user: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        currency: 'USD',
-        monthlyBudget: 3000,
-        savingsGoal: 20,
-        notificationsEnabled: true
-    },
     currentPeriod: 'month',
     currentPage: 'dashboard',
     editingTransaction: null,
@@ -44,48 +51,73 @@ let state = {
 
 // Initialize the app
 function init() {
-    loadSampleData();
-    setupEventListeners();
-    renderCategoriesDropdown();
-    renderAllCategories();
-    updateDashboard();
-    renderRecentTransactions();
-    renderAllTransactions();
-    renderUserSettings();
-}
-
-// Load sample data for demonstration
-function loadSampleData() {
-    // Sample categories
-    state.categories = [
-        { id: 1, name: 'Salary', type: 'income', icon: 'money-bill-wave', color: '#28a745' },
-        { id: 2, name: 'Freelance', type: 'income', icon: 'laptop-code', color: '#17a2b8' },
-        { id: 3, name: 'Food', type: 'expense', icon: 'utensils', color: '#dc3545' },
-        { id: 4, name: 'Transport', type: 'expense', icon: 'bus', color: '#fd7e14' },
-        { id: 5, name: 'Entertainment', type: 'expense', icon: 'film', color: '#6f42c1' },
-        { id: 6, name: 'Rent', type: 'expense', icon: 'home', color: '#343a40' }
-    ];
-
-    // Sample transactions
-    const today = new Date();
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    // Load data from localStorage
+    loadFromLocalStorage();
     
-    state.transactions = [
-        { id: 1, amount: 2500, description: 'Monthly Salary', categoryId: 1, date: formatDate(today), type: 'income' },
-        { id: 2, amount: 500, description: 'Freelance Project', categoryId: 2, date: formatDate(today), type: 'income' },
-        { id: 3, amount: 75, description: 'Grocery Shopping', categoryId: 3, date: formatDate(today), type: 'expense' },
-        { id: 4, amount: 30, description: 'Taxi Rides', categoryId: 4, date: formatDate(today), type: 'expense' },
-        { id: 5, amount: 1200, description: 'Apartment Rent', categoryId: 6, date: formatDate(today), type: 'expense' },
-        { id: 6, amount: 45, description: 'Movie Tickets', categoryId: 5, date: formatDate(today), type: 'expense' },
-        { id: 7, amount: 2500, description: 'Last Month Salary', categoryId: 1, date: formatDate(lastMonth), type: 'income' },
-        { id: 8, amount: 80, description: 'Dinner Out', categoryId: 3, date: formatDate(lastMonth), type: 'expense' },
-        { id: 9, amount: 1200, description: 'Last Month Rent', categoryId: 6, date: formatDate(lastMonth), type: 'expense' }
+    // Check if user is logged in
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail && state.users[rememberedEmail]) {
+        loginUser(rememberedEmail);
+    } else {
+        loginModal.show();
+    }
+    
+    // Setup event listeners
+    setupEventListeners();
+}
+
+// Load data from localStorage
+function loadFromLocalStorage() {
+    const savedData = localStorage.getItem('budgetGeniusData');
+    if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        state.users = parsedData.users || {};
+        // Initialize default categories if none exist
+        if (Object.keys(state.users).length > 0 && !parsedData.categories) {
+            initializeDefaultCategories();
+        }
+    } else {
+        // Initialize default categories for new installation
+        initializeDefaultCategories();
+    }
+}
+
+// Initialize default categories
+function initializeDefaultCategories() {
+    state.categories = [
+        { id: 1, name: 'Gaji', type: 'income', icon: 'money-bill-wave', color: '#28a745' },
+        { id: 2, name: 'Freelance', type: 'income', icon: 'laptop-code', color: '#17a2b8' },
+        { id: 3, name: 'Makanan', type: 'expense', icon: 'utensils', color: '#dc3545' },
+        { id: 4, name: 'Transportasi', type: 'expense', icon: 'bus', color: '#fd7e14' },
+        { id: 5, name: 'Hiburan', type: 'expense', icon: 'film', color: '#6f42c1' },
+        { id: 6, name: 'Sewa Rumah', type: 'expense', icon: 'home', color: '#343a40' }
     ];
 }
 
-// Set up event listeners
+// Save data to localStorage
+function saveToLocalStorage() {
+    const dataToSave = {
+        users: state.users,
+        categories: state.categories
+    };
+    localStorage.setItem('budgetGeniusData', JSON.stringify(dataToSave));
+}
+
+// Setup event listeners
 function setupEventListeners() {
+    // Login/Register
+    loginForm.addEventListener('submit', handleLogin);
+    registerForm.addEventListener('submit', handleRegister);
+    showRegisterBtn.addEventListener('click', () => {
+        loginModal.hide();
+        registerModal.show();
+    });
+    showLoginBtn.addEventListener('click', () => {
+        registerModal.hide();
+        loginModal.show();
+    });
+    logoutBtn.addEventListener('click', handleLogout);
+
     // Navigation
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -99,8 +131,9 @@ function setupEventListeners() {
     addTransactionBtn.addEventListener('click', () => {
         state.editingTransaction = null;
         transactionForm.reset();
-        document.getElementById('transactionModalTitle').textContent = 'Add New Transaction';
+        document.getElementById('transactionModalTitle').textContent = 'Tambah Transaksi Baru';
         document.getElementById('transaction-date').value = formatDate(new Date());
+        renderCategoriesDropdown();
         transactionModal.show();
     });
 
@@ -110,7 +143,7 @@ function setupEventListeners() {
     addCategoryBtn.addEventListener('click', () => {
         state.editingCategory = null;
         categoryForm.reset();
-        document.getElementById('categoryModalTitle').textContent = 'Add New Category';
+        document.getElementById('categoryModalTitle').textContent = 'Tambah Kategori Baru';
         categoryModal.show();
     });
 
@@ -149,9 +182,112 @@ function setupEventListeners() {
 
     // Export data
     exportAllDataBtn.addEventListener('click', exportAllData);
+    exportReportBtn.addEventListener('click', exportReport);
+
+    // Reset data
+    resetAllDataBtn.addEventListener('click', () => {
+        showConfirmation(
+            'Hapus Semua Data',
+            'Apakah Anda yakin ingin menghapus semua data? Aksi ini tidak dapat dibatalkan.',
+            resetAllData
+        );
+    });
 
     // Refresh insights
     refreshInsightsBtn.addEventListener('click', generateInsights);
+
+    // Settings forms
+    accountSettingsForm.addEventListener('submit', saveAccountSettings);
+    budgetSettingsForm.addEventListener('submit', saveBudgetSettings);
+}
+
+// Handle login
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const rememberMe = document.getElementById('remember-me').checked;
+
+    if (!state.users[email]) {
+        alert('Email tidak terdaftar');
+        return;
+    }
+
+    if (state.users[email].password !== password) {
+        alert('Password salah');
+        return;
+    }
+
+    if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+    } else {
+        localStorage.removeItem('rememberedEmail');
+    }
+
+    loginUser(email);
+}
+
+// Handle register
+function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('register-name').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('register-confirm-password').value;
+
+    if (password !== confirmPassword) {
+        alert('Password dan konfirmasi password tidak cocok');
+        return;
+    }
+
+    if (state.users[email]) {
+        alert('Email sudah terdaftar');
+        return;
+    }
+
+    // Create new user
+    state.users[email] = {
+        name,
+        email,
+        password,
+        currency: 'IDR',
+        monthlyBudget: 0,
+        savingsGoal: 20,
+        notificationsEnabled: true,
+        transactions: [],
+        categories: JSON.parse(JSON.stringify(state.categories)) // Copy default categories
+    };
+
+    saveToLocalStorage();
+    registerModal.hide();
+    loginUser(email);
+}
+
+// Login user
+function loginUser(email) {
+    state.currentUser = email;
+    state.transactions = state.users[email].transactions;
+    state.categories = state.users[email].categories;
+    
+    // Update UI
+    document.getElementById('sidebar-username').textContent = state.users[email].name;
+    appContainer.classList.remove('d-none');
+    loginModal.hide();
+    
+    // Initialize UI
+    renderCategoriesDropdown();
+    renderAllCategories();
+    updateDashboard();
+    renderRecentTransactions();
+    renderAllTransactions();
+    renderUserSettings();
+}
+
+// Handle logout
+function handleLogout() {
+    state.currentUser = null;
+    appContainer.classList.add('d-none');
+    loginModal.show();
 }
 
 // Show specific page content
@@ -175,26 +311,34 @@ function showPage(page) {
     document.getElementById(`${page}-content`).classList.remove('d-none');
     
     // Update page title
-    pageTitle.textContent = document.querySelector(`.nav-link[href="#${page}"]`).textContent.trim();
+    const pageTitles = {
+        'dashboard': 'Beranda',
+        'transaksi': 'Transaksi',
+        'kategori': 'Kategori',
+        'laporan': 'Laporan',
+        'analisis': 'Analisis',
+        'pengaturan': 'Pengaturan'
+    };
+    pageTitle.textContent = pageTitles[page];
     
     // Page-specific initializations
     switch (page) {
         case 'dashboard':
             updateDashboard();
             break;
-        case 'transactions':
+        case 'transaksi':
             renderAllTransactions();
             break;
-        case 'categories':
+        case 'kategori':
             renderAllCategories();
             break;
-        case 'reports':
+        case 'laporan':
             renderReports();
             break;
-        case 'insights':
+        case 'analisis':
             generateInsights();
             break;
-        case 'settings':
+        case 'pengaturan':
             renderUserSettings();
             break;
     }
@@ -213,15 +357,19 @@ function formatDate(date) {
     return [year, month, day].join('-');
 }
 
-// Format date for display (e.g., Jan 1, 2023)
+// Format date for display (e.g., 1 Jan 2023)
 function formatDisplayDate(dateStr) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateStr).toLocaleDateString(undefined, options);
+    return new Date(dateStr).toLocaleDateString('id-ID', options);
 }
 
 // Format currency
 function formatCurrency(amount) {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: state.user.currency }).format(amount);
+    if (state.users[state.currentUser].currency === 'IDR') {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    } else {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: state.users[state.currentUser].currency }).format(amount);
+    }
 }
 
 // Save transaction
@@ -233,7 +381,7 @@ function saveTransaction() {
     const type = document.querySelector('input[name="transaction-type"]:checked').value;
     
     if (!amount || !description || !categoryId || !date) {
-        alert('Please fill in all fields');
+        alert('Harap isi semua field');
         return;
     }
 
@@ -258,6 +406,10 @@ function saveTransaction() {
         state.transactions.push(transactionData);
     }
 
+    // Save to user data
+    state.users[state.currentUser].transactions = state.transactions;
+    saveToLocalStorage();
+
     transactionModal.hide();
     updateDashboard();
     renderRecentTransactions();
@@ -272,7 +424,7 @@ function saveCategory() {
     const color = document.getElementById('category-color').value;
     
     if (!name) {
-        alert('Please enter a category name');
+        alert('Harap masukkan nama kategori');
         return;
     }
 
@@ -296,6 +448,10 @@ function saveCategory() {
         state.categories.push(categoryData);
     }
 
+    // Save to user data
+    state.users[state.currentUser].categories = state.categories;
+    saveToLocalStorage();
+
     categoryModal.hide();
     renderCategoriesDropdown();
     renderAllCategories();
@@ -312,7 +468,7 @@ function renderCategoriesDropdown() {
     
     if (incomeCategories.length > 0) {
         const incomeGroup = document.createElement('optgroup');
-        incomeGroup.label = 'Income';
+        incomeGroup.label = 'Pemasukan';
         incomeCategories.forEach(category => {
             incomeGroup.innerHTML += `<option value="${category.id}">${category.name}</option>`;
         });
@@ -321,7 +477,7 @@ function renderCategoriesDropdown() {
     
     if (expenseCategories.length > 0) {
         const expenseGroup = document.createElement('optgroup');
-        expenseGroup.label = 'Expenses';
+        expenseGroup.label = 'Pengeluaran';
         expenseCategories.forEach(category => {
             expenseGroup.innerHTML += `<option value="${category.id}">${category.name}</option>`;
         });
@@ -373,11 +529,12 @@ function renderAllCategories() {
             
             if (category) {
                 state.editingCategory = category;
-                document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+                document.getElementById('categoryModalTitle').textContent = 'Edit Kategori';
                 document.getElementById('category-name').value = category.name;
                 document.getElementById('category-type').value = category.type;
                 document.getElementById('category-icon').value = category.icon;
                 document.getElementById('category-color').value = category.color;
+                document.getElementById('category-id').value = category.id;
                 categoryModal.show();
             }
         });
@@ -390,10 +547,12 @@ function renderAllCategories() {
             
             if (category) {
                 showConfirmation(
-                    'Delete Category',
-                    `Are you sure you want to delete the "${category.name}" category?`,
+                    'Hapus Kategori',
+                    `Apakah Anda yakin ingin menghapus kategori "${category.name}"?`,
                     () => {
                         state.categories = state.categories.filter(c => c.id !== id);
+                        state.users[state.currentUser].categories = state.categories;
+                        saveToLocalStorage();
                         renderAllCategories();
                         renderCategoriesDropdown();
                         updateDashboard();
@@ -415,9 +574,9 @@ function updateDashboard() {
     document.getElementById('balance-amount').textContent = formatCurrency(balance);
     
     // Update progress bars
-    const incomePercentage = state.user.monthlyBudget ? Math.min(100, (totalIncome / state.user.monthlyBudget) * 100) : 0;
-    const expensePercentage = state.user.monthlyBudget ? Math.min(100, (totalExpense / state.user.monthlyBudget) * 100) : 0;
-    const balancePercentage = state.user.monthlyBudget ? Math.min(100, (balance / state.user.monthlyBudget) * 100) : 0;
+    const incomePercentage = state.users[state.currentUser].monthlyBudget ? Math.min(100, (totalIncome / state.users[state.currentUser].monthlyBudget) * 100) : 0;
+    const expensePercentage = state.users[state.currentUser].monthlyBudget ? Math.min(100, (totalExpense / state.users[state.currentUser].monthlyBudget) * 100) : 0;
+    const balancePercentage = state.users[state.currentUser].monthlyBudget ? Math.min(100, (balance / state.users[state.currentUser].monthlyBudget) * 100) : 0;
     
     document.getElementById('income-progress').style.width = `${incomePercentage}%`;
     document.getElementById('expense-progress').style.width = `${expensePercentage}%`;
@@ -428,7 +587,9 @@ function updateDashboard() {
     renderCategoryChart(filteredTransactions);
     
     // Generate insights
-    generateInsights();
+    if (state.currentPage === 'dashboard' || state.currentPage === 'analisis') {
+        generateInsights();
+    }
 }
 
 // Filter transactions based on current period
@@ -520,14 +681,14 @@ function renderSpendingChart(transactions) {
             labels: sortedDates.map(date => formatDisplayDate(date)),
             datasets: [
                 {
-                    label: 'Income',
+                    label: 'Pemasukan',
                     data: incomeData,
                     backgroundColor: 'rgba(40, 167, 69, 0.7)',
                     borderColor: 'rgba(40, 167, 69, 1)',
                     borderWidth: 1
                 },
                 {
-                    label: 'Expenses',
+                    label: 'Pengeluaran',
                     data: expenseData,
                     backgroundColor: 'rgba(220, 53, 69, 0.7)',
                     borderColor: 'rgba(220, 53, 69, 1)',
@@ -575,8 +736,7 @@ function renderCategoryChart(transactions) {
         .filter(t => t.type === 'expense')
         .forEach(t => {
             const category = state.categories.find(c => c.id === t.categoryId);
-            const categoryName = category ? category.name : 'Uncategorized';
-            
+            const categoryName = category ? category.name : 'Lain-Lain';
             if (!expensesByCategory[categoryName]) {
                 expensesByCategory[categoryName] = 0;
             }
@@ -635,13 +795,13 @@ function renderRecentTransactions() {
     container.innerHTML = '';
     
     if (filteredTransactions.length === 0) {
-        container.innerHTML = '<tr><td colspan="4" class="text-center">No transactions found</td></tr>';
+        container.innerHTML = '<tr><td colspan="4" class="text-center">Tidak ada transaksi</td></tr>';
         return;
     }
     
     filteredTransactions.forEach(transaction => {
         const category = state.categories.find(c => c.id === transaction.categoryId);
-        const categoryName = category ? category.name : 'Uncategorized';
+        const categoryName = category ? category.name : 'Lainnya';
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -667,7 +827,7 @@ function renderAllTransactions(page = 1, perPage = 10) {
     container.innerHTML = '';
     
     if (filteredTransactions.length === 0) {
-        container.innerHTML = '<tr><td colspan="5" class="text-center">No transactions found</td></tr>';
+        container.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada transaksi</td></tr>';
         pagination.innerHTML = '';
         return;
     }
@@ -681,7 +841,7 @@ function renderAllTransactions(page = 1, perPage = 10) {
     // Render transactions
     paginatedTransactions.forEach(transaction => {
         const category = state.categories.find(c => c.id === transaction.categoryId);
-        const categoryName = category ? category.name : 'Uncategorized';
+        const categoryName = category ? category.name : 'Lainnya';
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -752,12 +912,13 @@ function renderAllTransactions(page = 1, perPage = 10) {
             
             if (transaction) {
                 state.editingTransaction = transaction;
-                document.getElementById('transactionModalTitle').textContent = 'Edit Transaction';
+                document.getElementById('transactionModalTitle').textContent = 'Edit Transaksi';
                 document.getElementById('transaction-amount').value = transaction.amount;
                 document.getElementById('transaction-description').value = transaction.description;
                 document.getElementById('transaction-category').value = transaction.categoryId;
                 document.getElementById('transaction-date').value = transaction.date;
                 document.getElementById(`type-${transaction.type}`).checked = true;
+                document.getElementById('transaction-id').value = transaction.id;
                 transactionModal.show();
             }
         });
@@ -770,10 +931,12 @@ function renderAllTransactions(page = 1, perPage = 10) {
             
             if (transaction) {
                 showConfirmation(
-                    'Delete Transaction',
-                    `Are you sure you want to delete this transaction: "${transaction.description}"?`,
+                    'Hapus Transaksi',
+                    `Apakah Anda yakin ingin menghapus transaksi: "${transaction.description}"?`,
                     () => {
                         state.transactions = state.transactions.filter(t => t.id !== id);
+                        state.users[state.currentUser].transactions = state.transactions;
+                        saveToLocalStorage();
                         updateDashboard();
                         renderRecentTransactions();
                         renderAllTransactions(page, perPage);
@@ -813,22 +976,22 @@ function renderReports() {
         data: {
             labels: sortedMonths.map(month => {
                 const [year, m] = month.split('-');
-                return new Date(year, m - 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+                return new Date(year, m - 1).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
             }),
             datasets: [
                 {
-                    label: 'Income',
+                    label: 'Pemasukan',
                     data: incomeData,
                     backgroundColor: 'rgba(40, 167, 69, 0.7)',
                     borderColor: 'rgba(40, 167, 69, 1)',
                     borderWidth: 1
                 },
                 {
-                    label: 'Expenses',
+                    label: 'Pengeluaran',
                     data: expenseData,
                     backgroundColor: 'rgba(220, 53, 69, 0.7)',
                     borderColor: 'rgba(220, 53, 69, 1)',
-                                        borderWidth: 1
+                    borderWidth: 1
                 }
             ]
         },
@@ -923,10 +1086,10 @@ function renderCategoryTrendChart(categoryId) {
         data: {
             labels: sortedMonths.map(month => {
                 const [year, m] = month.split('-');
-                return new Date(year, m - 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+                return new Date(year, m - 1).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
             }),
             datasets: [{
-                label: 'Monthly Spending',
+                label: 'Pengeluaran Bulanan',
                 data: amounts,
                 backgroundColor: 'rgba(78, 115, 223, 0.05)',
                 borderColor: 'rgba(78, 115, 223, 1)',
@@ -983,7 +1146,7 @@ function renderDetailedReport() {
         if (t.type === 'expense') {
             const date = new Date(t.date);
             const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const category = state.categories.find(c => c.id === t.categoryId) || { name: 'Uncategorized' };
+            const category = state.categories.find(c => c.id === t.categoryId) || { name: 'Lainnya' };
             
             if (!categoryData[category.name]) {
                 categoryData[category.name] = {
@@ -1092,11 +1255,11 @@ function generateInsights() {
             healthHTML += `
                 <div class="insight-item">
                     <div class="insight-title text-success">
-                        <i class="fas fa-check-circle me-2"></i> Excellent Savings Rate
+                        <i class="fas fa-check-circle me-2"></i> Tingkat Tabungan Bagus
                     </div>
                     <div class="insight-text">
-                        Your savings rate is ${savingsRate.toFixed(1)}%, which is above the recommended 20%. 
-                        Keep up the good work!
+                        Tingkat tabungan Anda ${savingsRate.toFixed(1)}%, di atas rekomendasi 20%. 
+                        Pertahankan kebiasaan baik ini!
                     </div>
                 </div>
             `;
@@ -1104,11 +1267,11 @@ function generateInsights() {
             healthHTML += `
                 <div class="insight-item">
                     <div class="insight-title text-warning">
-                        <i class="fas fa-exclamation-circle me-2"></i> Moderate Savings Rate
+                        <i class="fas fa-exclamation-circle me-2"></i> Tingkat Tabungan Sedang
                     </div>
                     <div class="insight-text">
-                        Your savings rate is ${savingsRate.toFixed(1)}%, which is below the recommended 20%. 
-                        Consider increasing your savings by reducing expenses or increasing income.
+                        Tingkat tabungan Anda ${savingsRate.toFixed(1)}%, di bawah rekomendasi 20%. 
+                        Pertimbangkan untuk meningkatkan tabungan dengan mengurangi pengeluaran atau menambah pendapatan.
                     </div>
                 </div>
             `;
@@ -1116,11 +1279,11 @@ function generateInsights() {
             healthHTML += `
                 <div class="insight-item">
                     <div class="insight-title text-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i> Low Savings Rate
+                        <i class="fas fa-exclamation-triangle me-2"></i> Tingkat Tabungan Rendah
                     </div>
                     <div class="insight-text">
-                        Your savings rate is only ${savingsRate.toFixed(1)}%, which is very low. 
-                        You should aim to save at least 20% of your income for financial security.
+                        Tingkat tabungan Anda hanya ${savingsRate.toFixed(1)}%, sangat rendah. 
+                        Targetkan menabung minimal 20% dari pendapatan untuk keamanan finansial.
                     </div>
                 </div>
             `;
@@ -1130,11 +1293,11 @@ function generateInsights() {
             healthHTML += `
                 <div class="insight-item">
                     <div class="insight-title text-success">
-                        <i class="fas fa-check-circle me-2"></i> Healthy Spending
+                        <i class="fas fa-check-circle me-2"></i> Pengeluaran Sehat
                     </div>
                     <div class="insight-text">
-                        You're spending ${expenseRatio.toFixed(1)}% of your income, which leaves a good amount for savings. 
-                        This is a sustainable financial habit.
+                        Anda menghabiskan ${expenseRatio.toFixed(1)}% dari pendapatan, menyisakan cukup untuk tabungan. 
+                        Ini adalah kebiasaan finansial yang baik.
                     </div>
                 </div>
             `;
@@ -1142,11 +1305,11 @@ function generateInsights() {
             healthHTML += `
                 <div class="insight-item">
                     <div class="insight-title text-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i> High Spending
+                        <i class="fas fa-exclamation-triangle me-2"></i> Pengeluaran Tinggi
                     </div>
                     <div class="insight-text">
-                        You're spending ${expenseRatio.toFixed(1)}% of your income, which doesn't leave much for savings. 
-                        Consider reviewing your expenses to find areas to cut back.
+                        Anda menghabiskan ${expenseRatio.toFixed(1)}% dari pendapatan, menyisakan sedikit untuk tabungan. 
+                        Pertimbangkan untuk meninjau pengeluaran Anda.
                     </div>
                 </div>
             `;
@@ -1162,7 +1325,7 @@ function generateInsights() {
         filteredTransactions
             .filter(t => t.type === 'expense')
             .forEach(t => {
-                const category = state.categories.find(c => c.id === t.categoryId) || { name: 'Uncategorized' };
+                const category = state.categories.find(c => c.id === t.categoryId) || { name: 'Lainnya' };
                 if (!expensesByCategory[category.name]) {
                     expensesByCategory[category.name] = 0;
                 }
@@ -1177,34 +1340,34 @@ function generateInsights() {
             recommendationsHTML += `
                 <div class="insight-item">
                     <div class="insight-title">
-                        <i class="fas fa-chart-pie me-2"></i> Top Spending Categories
+                        <i class="fas fa-chart-pie me-2"></i> Kategori Pengeluaran Terbesar
                     </div>
                     <div class="insight-text">
-                        Your top spending categories are:
+                        Kategori pengeluaran terbesar Anda:
                         <ul>
                             ${topCategories.map(([name, amount]) => `
-                                <li><strong>${name}</strong>: ${formatCurrency(amount)} (${(amount / totalExpense * 100).toFixed(1)}% of expenses)</li>
+                                <li><strong>${name}</strong>: ${formatCurrency(amount)} (${(amount / totalExpense * 100).toFixed(1)}% dari pengeluaran)</li>
                             `).join('')}
                         </ul>
-                        Consider reviewing these areas for potential savings.
+                        Pertimbangkan untuk meninjau kategori ini untuk penghematan.
                     </div>
                 </div>
             `;
         }
         
         // Budget comparison
-        if (state.user.monthlyBudget) {
-            const budgetUsage = (totalExpense / state.user.monthlyBudget) * 100;
+        if (state.users[state.currentUser].monthlyBudget) {
+            const budgetUsage = (totalExpense / state.users[state.currentUser].monthlyBudget) * 100;
             
             if (budgetUsage > 100) {
                 recommendationsHTML += `
                     <div class="insight-item">
                         <div class="insight-title text-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Over Budget
+                            <i class="fas fa-exclamation-triangle me-2"></i> Melebihi Anggaran
                         </div>
                         <div class="insight-text">
-                            You've exceeded your monthly budget by ${formatCurrency(totalExpense - state.user.monthlyBudget)} 
-                            (${budgetUsage.toFixed(1)}% of budget). Try to reduce spending in the coming weeks.
+                            Anda telah melebihi anggaran bulanan sebesar ${formatCurrency(totalExpense - state.users[state.currentUser].monthlyBudget)} 
+                            (${budgetUsage.toFixed(1)}% dari anggaran). Coba kurangi pengeluaran di minggu-minggu mendatang.
                         </div>
                     </div>
                 `;
@@ -1212,11 +1375,11 @@ function generateInsights() {
                 recommendationsHTML += `
                     <div class="insight-item">
                         <div class="insight-title text-warning">
-                            <i class="fas fa-exclamation-circle me-2"></i> Approaching Budget Limit
+                            <i class="fas fa-exclamation-circle me-2"></i> Mendekati Batas Anggaran
                         </div>
                         <div class="insight-text">
-                            You've used ${budgetUsage.toFixed(1)}% of your monthly budget. 
-                            Be cautious with additional spending this month.
+                            Anda telah menggunakan ${budgetUsage.toFixed(1)}% dari anggaran bulanan. 
+                            Hati-hati dengan pengeluaran tambahan bulan ini.
                         </div>
                     </div>
                 `;
@@ -1224,11 +1387,11 @@ function generateInsights() {
                 recommendationsHTML += `
                     <div class="insight-item">
                         <div class="insight-title text-success">
-                            <i class="fas fa-check-circle me-2"></i> Within Budget
+                            <i class="fas fa-check-circle me-2"></i> Dalam Anggaran
                         </div>
                         <div class="insight-text">
-                            You've used ${budgetUsage.toFixed(1)}% of your monthly budget. 
-                            Good job staying within your spending limits!
+                            Anda telah menggunakan ${budgetUsage.toFixed(1)}% dari anggaran bulanan. 
+                            Kerja bagus dalam mengelola pengeluaran!
                         </div>
                     </div>
                 `;
@@ -1236,32 +1399,32 @@ function generateInsights() {
         }
         
         // Savings goal
-        if (state.user.savingsGoal) {
+        if (state.users[state.currentUser].savingsGoal) {
             const currentSavingsRate = (balance / totalIncome) * 100;
             
-            if (currentSavingsRate >= state.user.savingsGoal) {
+            if (currentSavingsRate >= state.users[state.currentUser].savingsGoal) {
                 recommendationsHTML += `
                     <div class="insight-item">
                         <div class="insight-title text-success">
-                            <i class="fas fa-check-circle me-2"></i> Meeting Savings Goal
+                            <i class="fas fa-check-circle me-2"></i> Mencapai Target Tabungan
                         </div>
                         <div class="insight-text">
-                            You're saving ${currentSavingsRate.toFixed(1)}% of your income, which meets your 
-                            ${state.user.savingsGoal}% savings goal. Excellent work!
+                            Anda menabung ${currentSavingsRate.toFixed(1)}% dari pendapatan, memenuhi target 
+                            ${state.users[state.currentUser].savingsGoal}%. Kerja bagus!
                         </div>
                     </div>
                 `;
             } else {
-                const needed = (state.user.savingsGoal / 100 * totalIncome) - balance;
+                const needed = (state.users[state.currentUser].savingsGoal / 100 * totalIncome) - balance;
                 recommendationsHTML += `
                     <div class="insight-item">
                         <div class="insight-title text-warning">
-                            <i class="fas fa-exclamation-circle me-2"></i> Below Savings Goal
+                            <i class="fas fa-exclamation-circle me-2"></i> Di Bawah Target Tabungan
                         </div>
                         <div class="insight-text">
-                            You're saving ${currentSavingsRate.toFixed(1)}% of your income, which is below your 
-                            ${state.user.savingsGoal}% goal. You need to save an additional 
-                            ${formatCurrency(needed)} this period to meet your target.
+                            Anda menabung ${currentSavingsRate.toFixed(1)}% dari pendapatan, di bawah target 
+                            ${state.users[state.currentUser].savingsGoal}%. Anda perlu menabung tambahan 
+                            ${formatCurrency(needed)} periode ini untuk mencapai target.
                         </div>
                     </div>
                 `;
@@ -1277,11 +1440,11 @@ function generateInsights() {
             dashboardHTML += `
                 <div class="insight-item">
                     <div class="insight-title text-success">
-                        <i class="fas fa-smile me-2"></i> Positive Cash Flow
+                        <i class="fas fa-smile me-2"></i> Arus Kas Positif
                     </div>
                     <div class="insight-text">
-                        You have a positive balance of ${formatCurrency(balance)} this period. 
-                        Consider allocating some of this to savings or investments.
+                        Anda memiliki saldo positif sebesar ${formatCurrency(balance)} periode ini. 
+                        Pertimbangkan untuk mengalokasikan sebagian ke tabungan atau investasi.
                     </div>
                 </div>
             `;
@@ -1289,11 +1452,11 @@ function generateInsights() {
             dashboardHTML += `
                 <div class="insight-item">
                     <div class="insight-title text-danger">
-                        <i class="fas fa-frown me-2"></i> Negative Cash Flow
+                        <i class="fas fa-frown me-2"></i> Arus Kas Negatif
                     </div>
                     <div class="insight-text">
-                        You have a negative balance of ${formatCurrency(-balance)} this period. 
-                        Review your expenses to avoid overspending.
+                        Anda memiliki saldo negatif sebesar ${formatCurrency(-balance)} periode ini. 
+                        Tinjau pengeluaran Anda untuk menghindari pemborosan.
                     </div>
                 </div>
             `;
@@ -1351,15 +1514,15 @@ function generateInsights() {
             dashboardHTML += `
                 <div class="insight-item">
                     <div class="insight-title">
-                        <i class="fas fa-chart-line me-2"></i> Period Comparison
+                        <i class="fas fa-chart-line me-2"></i> Perbandingan Periode
                     </div>
                     <div class="insight-text">
                         <ul>
-                            <li>Income: ${incomeChange >= 0 ? '↑' : '↓'} ${Math.abs(incomeChange).toFixed(1)}% 
+                            <li>Pendapatan: ${incomeChange >= 0 ? '↑' : '↓'} ${Math.abs(incomeChange).toFixed(1)}% 
                                 (${formatCurrency(totalIncome)} vs ${formatCurrency(prevIncome)})</li>
-                            <li>Expenses: ${expenseChange >= 0 ? '↑' : '↓'} ${Math.abs(expenseChange).toFixed(1)}% 
+                            <li>Pengeluaran: ${expenseChange >= 0 ? '↑' : '↓'} ${Math.abs(expenseChange).toFixed(1)}% 
                                 (${formatCurrency(totalExpense)} vs ${formatCurrency(prevExpense)})</li>
-                            <li>Balance: ${balanceChange >= 0 ? '↑' : '↓'} ${Math.abs(balanceChange).toFixed(1)}% 
+                            <li>Saldo: ${balanceChange >= 0 ? '↑' : '↓'} ${Math.abs(balanceChange).toFixed(1)}% 
                                 (${formatCurrency(balance)} vs ${formatCurrency(prevBalance)})</li>
                         </ul>
                     </div>
@@ -1377,12 +1540,57 @@ function generateInsights() {
 
 // Render user settings
 function renderUserSettings() {
-    document.getElementById('user-name').value = state.user.name;
-    document.getElementById('user-email').value = state.user.email;
-    document.getElementById('user-currency').value = state.user.currency;
-    document.getElementById('monthly-budget').value = state.user.monthlyBudget;
-    document.getElementById('savings-goal').value = state.user.savingsGoal;
-    document.getElementById('notifications-enabled').checked = state.user.notificationsEnabled;
+    const user = state.users[state.currentUser];
+    document.getElementById('user-name').value = user.name;
+    document.getElementById('user-email').value = user.email;
+    document.getElementById('user-currency').value = user.currency;
+    document.getElementById('monthly-budget').value = user.monthlyBudget;
+    document.getElementById('savings-goal').value = user.savingsGoal;
+    document.getElementById('notifications-enabled').checked = user.notificationsEnabled;
+}
+
+// Save account settings
+function saveAccountSettings(e) {
+    e.preventDefault();
+    const name = document.getElementById('user-name').value;
+    const email = document.getElementById('user-email').value;
+    
+    if (email !== state.currentUser) {
+        if (state.users[email]) {
+            alert('Email sudah digunakan oleh akun lain');
+            return;
+        }
+        
+        // Update user key in state
+        state.users[email] = state.users[state.currentUser];
+        delete state.users[state.currentUser];
+        state.currentUser = email;
+    }
+    
+    state.users[state.currentUser].name = name;
+    state.users[state.currentUser].email = email;
+    
+    // Update UI
+    document.getElementById('sidebar-username').textContent = name;
+    
+    saveToLocalStorage();
+    alert('Pengaturan akun berhasil disimpan');
+}
+
+// Save budget settings
+function saveBudgetSettings(e) {
+    e.preventDefault();
+    const monthlyBudget = parseFloat(document.getElementById('monthly-budget').value) || 0;
+    const savingsGoal = parseInt(document.getElementById('savings-goal').value) || 0;
+    const notificationsEnabled = document.getElementById('notifications-enabled').checked;
+    
+    state.users[state.currentUser].monthlyBudget = monthlyBudget;
+    state.users[state.currentUser].savingsGoal = savingsGoal;
+    state.users[state.currentUser].notificationsEnabled = notificationsEnabled;
+    
+    saveToLocalStorage();
+    updateDashboard();
+    alert('Pengaturan anggaran berhasil disimpan');
 }
 
 // Show confirmation dialog
@@ -1404,45 +1612,144 @@ function exportAllData() {
     const transactionsWS = XLSX.utils.json_to_sheet(state.transactions.map(t => {
         const category = state.categories.find(c => c.id === t.categoryId);
         return {
-            Date: t.date,
-            Type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
-            Category: category ? category.name : 'Uncategorized',
-            Description: t.description,
-            Amount: t.amount,
-            'Amount (Formatted)': formatCurrency(t.amount)
+            Tanggal: t.date,
+            Jenis: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+            Kategori: category ? category.name : 'Lainnya',
+            Keterangan: t.description,
+            Jumlah: t.amount,
+            'Jumlah (Format)': formatCurrency(t.amount)
         };
     }));
     
     const categoriesWS = XLSX.utils.json_to_sheet(state.categories.map(c => ({
-        Name: c.name,
-        Type: c.type.charAt(0).toUpperCase() + c.type.slice(1),
-        Icon: c.icon,
-        Color: c.color
+        Nama: c.name,
+        Jenis: c.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+        Ikon: c.icon,
+        Warna: c.color
     })));
     
     const userWS = XLSX.utils.json_to_sheet([{
-        Name: state.user.name,
-        Email: state.user.email,
-        Currency: state.user.currency,
-        'Monthly Budget': state.user.monthlyBudget,
-        'Savings Goal (%)': state.user.savingsGoal,
-        'Notifications Enabled': state.user.notificationsEnabled ? 'Yes' : 'No'
+        Nama: state.users[state.currentUser].name,
+        Email: state.users[state.currentUser].email,
+        'Mata Uang': state.users[state.currentUser].currency,
+        'Anggaran Bulanan': state.users[state.currentUser].monthlyBudget,
+        'Target Tabungan (%)': state.users[state.currentUser].savingsGoal,
+        'Notifikasi Aktif': state.users[state.currentUser].notificationsEnabled ? 'Ya' : 'Tidak'
     }]);
     
     // Create workbook
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, transactionsWS, "Transactions");
-    XLSX.utils.book_append_sheet(wb, categoriesWS, "Categories");
-    XLSX.utils.book_append_sheet(wb, userWS, "User Settings");
+    XLSX.utils.book_append_sheet(wb, transactionsWS, "Transaksi");
+    XLSX.utils.book_append_sheet(wb, categoriesWS, "Kategori");
+    XLSX.utils.book_append_sheet(wb, userWS, "Pengaturan");
     
     // Export to file
     const date = new Date();
     const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-    XLSX.writeFile(wb, `BudgetGenius_Export_${dateStr}.xlsx`);
+    XLSX.writeFile(wb, `BudgetGenius_SemuaData_${dateStr}.xlsx`);
+}
+
+// Export report to Excel
+function exportReport() {
+    // Get current and previous month data
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    
+    const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    const prevMonthStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}`;
+    
+    // Calculate category data for report
+    const categoryData = {};
+    
+    state.transactions.forEach(t => {
+        if (t.type === 'expense') {
+            const date = new Date(t.date);
+            const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const category = state.categories.find(c => c.id === t.categoryId) || { name: 'Lainnya' };
+            
+            if (!categoryData[category.name]) {
+                categoryData[category.name] = {
+                    currentMonth: 0,
+                    prevMonth: 0
+                };
+            }
+            
+            if (monthYear === currentMonthStr) {
+                categoryData[category.name].currentMonth += t.amount;
+            } else if (monthYear === prevMonthStr) {
+                categoryData[category.name].prevMonth += t.amount;
+            }
+        }
+    });
+    
+    // Prepare worksheet data
+    const reportData = Object.entries(categoryData).map(([category, data]) => {
+        const change = data.prevMonth ? ((data.currentMonth - data.prevMonth) / data.prevMonth) * 100 : 0;
+        const percentage = data.currentMonth ? (data.currentMonth / Object.values(categoryData).reduce((sum, d) => sum + d.currentMonth, 0)) * 100 : 0;
+        
+        return {
+            Kategori: category,
+            'Bulan Ini': data.currentMonth,
+            'Bulan Lalu': data.prevMonth,
+            Perubahan: `${change.toFixed(1)}% ${change >= 0 ? '↑' : '↓'}`,
+            'Persentase': `${percentage.toFixed(1)}%`
+        };
+    });
+    
+    // Calculate totals
+    const totalCurrent = Object.values(categoryData).reduce((sum, d) => sum + d.currentMonth, 0);
+    const totalPrevious = Object.values(categoryData).reduce((sum, d) => sum + d.prevMonth, 0);
+    const totalChange = totalPrevious ? ((totalCurrent - totalPrevious) / totalPrevious) * 100 : 0;
+    
+    // Add total row
+    reportData.push({
+        Kategori: 'TOTAL',
+        'Bulan Ini': totalCurrent,
+        'Bulan Lalu': totalPrevious,
+        Perubahan: `${totalChange.toFixed(1)}% ${totalChange >= 0 ? '↑' : '↓'}`,
+        'Persentase': '100%'
+    });
+    
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(reportData);
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+    
+    // Export to file
+    const date = new Date();
+    const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    XLSX.writeFile(wb, `BudgetGenius_Laporan_${dateStr}.xlsx`);
+}
+
+// Reset all data
+function resetAllData() {
+    // Reset user-specific data
+    state.users[state.currentUser].transactions = [];
+    state.users[state.currentUser].categories = JSON.parse(JSON.stringify(state.categories)); // Reset to default categories
+    state.users[state.currentUser].monthlyBudget = 0;
+    state.users[state.currentUser].savingsGoal = 20;
+    
+    // Update state
+    state.transactions = [];
+    state.categories = state.users[state.currentUser].categories;
+    
+    // Save to localStorage
+    saveToLocalStorage();
+    
+    // Update UI
+    updateDashboard();
+    renderRecentTransactions();
+    renderAllCategories();
+    renderAllTransactions();
+    renderUserSettings();
+    
+    alert('Semua data telah direset ke kondisi awal');
 }
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', init);
-
-
-                  
