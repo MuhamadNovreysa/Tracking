@@ -134,11 +134,11 @@ body {
     margin-right: 0.5rem;
     font-size: 1.1rem;
 }
-
+.sidebar .nav {
+    padding-bottom: 1rem; /* Kasih jarak bawah biar ga nempel */
+}
 .sidebar-footer {
     padding: 1.5rem;
-    position: absolute;
-    bottom: 0;
     width: 100%;
 }
 
@@ -158,6 +158,8 @@ body {
 }
 
 .btn-logout {
+    margin-top: 0.5rem; /* Jarak dari tombol di atasnya */
+  
     width: 100%;
     border: 1px solid var(--danger-color);
     color: var(--danger-color);
