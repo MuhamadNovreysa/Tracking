@@ -1615,13 +1615,12 @@
   appId: "1:28636122127:web:38c89c6fc2abb75fbbe77a",
   measurementId: "G-4NHDRNJE8F"
 };
-
-    // Initialize Firebase
+// Pindahkan inisialisasi Firebase ke bagian atas script
+if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const analytics = firebase.analytics();
-
-    // DOM Elements
+}
+const database = firebase.database();
+        // DOM Elements
     const appContainer = document.getElementById('app-container');
     const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
     const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
@@ -1674,40 +1673,70 @@
 
     // Initialize the app
     function init() {
-        // Pastikan #app-container disembunyikan saat halaman dimuat
-        if (appContainer) {
-            appContainer.classList.add('d-none');
-            console.log('app-container initialized and hidden');
-        } else {
-            console.error('app-container not found in DOM!');
-        }
+    console.log('Initializing application...');
+    
+    // 1. Handle app container visibility
+    const appContainer = document.getElementById('app-container');
+    if (appContainer) {
+        appContainer.classList.add('d-none');
+        console.log('App container hidden successfully');
+    } else {
+        console.error('App container element not found in DOM!');
+    }
 
-        // Coba load dari localStorage dulu
-        const savedState = localStorage.getItem('appState');
-        if (savedState) {
+    // 2. Check for saved state in localStorage
+    const savedState = localStorage.getItem('appState');
+    if (savedState) {
+        try {
             state = JSON.parse(savedState);
             if (state.currentUser) {
+                console.log('Found saved user state, attempting login...');
                 loginUser(state.currentUser);
-                return;
+                return; // Exit init if login successful
             }
+        } catch (e) {
+            console.error('Error parsing saved state:', e);
+            localStorage.removeItem('appState');
         }
+    }
 
-        // Kalau ga ada di localStorage, cek Firebase
-        const rememberedEmail = localStorage.getItem('rememberedEmail');
-        if (rememberedEmail) {
-            checkUserExists(rememberedEmail, (exists) => {
-                if (exists) {
-                    loginUser(rememberedEmail);
-                } else {
-                    localStorage.removeItem('rememberedEmail');
-                    loginModal.show();
-                }
-            });
-        } else {
-            loginModal.show();
-        }
+    // 3. Initialize login modal
+    const loginModalElement = document.getElementById('loginModal');
+    if (!loginModalElement) {
+        console.error('Login modal element not found!');
+        return;
+    }
 
+    const loginModal = new bootstrap.Modal(loginModalElement, {
+        backdrop: 'static',
+        keyboard: false
+    });
+
+    // 4. Check for remembered email
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+        console.log('Found remembered email, checking existence...');
+        checkUserExists(rememberedEmail, (exists) => {
+            if (exists) {
+                loginUser(rememberedEmail);
+            } else {
+                console.log('Remembered email no longer valid, removing...');
+                localStorage.removeItem('rememberedEmail');
+                loginModal.show();
+            }
+        });
+    } else {
+        console.log('No remembered email found, showing login modal...');
+        loginModal.show();
+    }
+
+    // 5. Setup event listeners
+    try {
         setupEventListeners();
+        console.log('Event listeners setup completed');
+    } catch (e) {
+        console.error('Error setting up event listeners:', e);
+    }
     }
 
     // Check if user exists in Firebase
@@ -3405,5 +3434,22 @@
     // Initialize the app when DOM is loaded
     document.addEventListener('DOMContentLoaded', init);
     </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pastikan modal login muncul pertama kali
+    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'), {
+        backdrop: 'static', 
+        keyboard: false
+    });
+    loginModal.show();
+    
+    // Sembunyikan app container
+    const appContainer = document.getElementById('app-container');
+    if (appContainer) {
+        appContainer.classList.add('d-none');
+    }
+});
+</script>
 </body>
 </html>
