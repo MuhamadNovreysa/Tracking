@@ -1597,7 +1597,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
-<script>
+    <!-- Tambahkan ini di bagian Firebase scripts -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script>
     // Initialize Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyD1B_aBIvhatHtK9vEOq_00Wx55HOB53FI",
@@ -1790,47 +1792,106 @@
         });
 
         // Register form
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
+registerForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('register-name').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('register-confirm-password').value;
 
-            if (password !== confirmPassword) {
-                alert('Password dan konfirmasi password tidak cocok');
-                return;
+    // Validasi input
+    if (!name || !email || !password || !confirmPassword) {
+        alert('Harap isi semua field');
+        return;
+    }
+
+    if (password.length < 6) {
+        alert('Password minimal 6 karakter');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        alert('Password dan konfirmasi password tidak cocok');
+        return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert('Format email tidak valid');
+        return;
+    }
+
+    // Disable tombol daftar selama proses registrasi
+    const registerBtn = registerForm.querySelector('button[type="submit"]');
+    registerBtn.disabled = true;
+    registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Mendaftarkan...';
+
+    // 1. Buat akun dengan Firebase Authentication
+    firebase.auth().createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // 2. Simpan data tambahan user ke Realtime Database
+            const userData = {
+                name,
+                email,
+                currency: 'IDR',
+                monthlyBudget: 0,
+                savingsGoal: 20,
+                notificationsEnabled: true,
+                transactions: [],
+                categories: getDefaultCategories(),
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            // Gunakan UID dari auth sebagai key
+            const userId = userCredential.user.uid;
+            
+            return database.ref('users/' + userId).set(userData);
+        })
+        .then(() => {
+            // Registrasi berhasil
+            registerModal.hide();
+            
+            // Tampilkan notifikasi sukses
+            const successAlert = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Registrasi berhasil! Anda akan langsung login.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('afterbegin', successAlert);
+            
+            // Login otomatis
+            loginUser(email);
+        })
+        .catch((error) => {
+            console.error('Error registrasi:', error);
+            
+            // Pesan error yang lebih spesifik
+            let errorMessage = 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.';
+            
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'Email sudah terdaftar. Gunakan email lain atau lakukan login.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Format email tidak valid.';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password terlalu lemah. Minimal 6 karakter.';
+                    break;
+                case 'auth/operation-not-allowed':
+                    errorMessage = 'Operasi registrasi tidak diizinkan. Hubungi admin.';
+                    break;
             }
-
-            checkUserExists(email, (exists) => {
-                if (exists) {
-                    alert('Email sudah terdaftar');
-                    return;
-                }
-
-                const userData = {
-                    name,
-                    email,
-                    password,
-                    currency: 'IDR',
-                    monthlyBudget: 0,
-                    savingsGoal: 20,
-                    notificationsEnabled: true,
-                    transactions: [],
-                    categories: getDefaultCategories()
-                };
-
-                saveUserData(email, userData)
-                    .then(() => {
-                        registerModal.hide();
-                        loginUser(email);
-                    })
-                    .catch((error) => {
-                        console.error('Error saving user data:', error);
-                        alert('Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
-                    });
-            });
+            
+            alert(errorMessage);
+        })
+        .finally(() => {
+            // Reset tombol registrasi
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i> Daftar';
         });
+});
 
         // Toggle between login and register
         showRegisterBtn.addEventListener('click', function() {
