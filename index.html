@@ -43,6 +43,11 @@
       overflow-x: hidden;
     }
 
+    /* Pastikan #app-container tersembunyi saat memiliki kelas d-none */
+    #app-container.d-none {
+        display: none !important;
+    }
+
     /* Dark mode support */
     @media (prefers-color-scheme: dark) {
       :root {
@@ -78,6 +83,7 @@
     #loginModal .modal-body, #registerModal .modal-body {
       padding-top: 1.5rem;
     }
+
     .btn-link {
       text-decoration: none;
       color: var(--primary-color);
@@ -694,9 +700,6 @@
 
     /* Responsive Styles */
     @media (min-width: 768px) {
-        #app-container.d-none {
-    display: none !important;
-        }
       .sidebar {
         transform: translateX(0);
       }
@@ -712,7 +715,6 @@
     }
 
     @media (max-width: 767px) {
-        
       .sidebar {
         transform: translateX(-100%);
       }
@@ -822,6 +824,7 @@
       transform: scale(1.1);
     }
   </style>
+    
 </head>
 <body>
     <!-- Login Modal -->
