@@ -78,9 +78,6 @@
     #loginModal .modal-body, #registerModal .modal-body {
       padding-top: 1.5rem;
     }
-#app-container.d-none {
-    display: none !important;
-}
     .btn-link {
       text-decoration: none;
       color: var(--primary-color);
@@ -715,10 +712,6 @@
     }
 
     @media (max-width: 767px) {
-/* Pastikan app-container tersembunyi saat memiliki class d-none */
-#app-container.d-none {
-    display: none !important;
-}
         
       .sidebar {
         transform: translateX(-100%);
@@ -1678,16 +1671,10 @@
         };
 
         // Initialize the app
-        // Initialize the app
-function init() {
-    // Pastikan app-container tersembunyi pertama kali
-    document.getElementById('app-container').classList.add('d-none');
-    
-    // Inisialisasi modal login dengan opsi yang benar
-    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'), {
-        backdrop: 'static', // Mencegah tutup modal dengan klik di luar
-        keyboard: false    // Mencegah tutup modal dengan tombol ESC
-    });
+        function init() {
+    // Pastikan #app-container tetap tersembunyi saat inisialisasi
+    const appContainer = document.getElementById('app-container');
+    appContainer.classList.add('d-none'); // Tambahkan ini untuk memastikan
 
     // Coba load dari localStorage dulu
     const savedState = localStorage.getItem('appState');
@@ -1707,17 +1694,17 @@ function init() {
                 loginUser(rememberedEmail);
             } else {
                 localStorage.removeItem('rememberedEmail');
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
                 loginModal.show();
             }
         });
     } else {
-        // Tampilkan modal login jika tidak ada user yang diingat
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
         loginModal.show();
     }
 
     setupEventListeners();
-}
-
+        }
         // Check if user exists in Firebase
         function checkUserExists(email, callback) {
             database.ref('users/' + encodeEmail(email)).once('value')
@@ -2002,22 +1989,30 @@ function init() {
         state.transactions = userData.transactions || [];
         state.categories = userData.categories || getDefaultCategories();
 
-        // Update UI setelah login berhasil
+        // Update UI
         document.getElementById('sidebar-username').textContent = userData.name;
-        document.getElementById('app-container').classList.remove('d-none');
+        const appContainer = document.getElementById('app-container');
+        const sidebar = document.getElementById('sidebar');
         
-        // Tutup modal login jika masih terbuka
-        const loginModalInstance = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-        if (loginModalInstance) {
-            loginModalInstance.hide();
+        if (appContainer) {
+            appContainer.classList.remove('d-none'); // Hanya hapus d-none setelah login berhasil
+        } else {
+            console.error('app-container not found in DOM!');
+        }
+        
+        if (sidebar) {
+            sidebar.classList.add('active'); // Ini yang bikin sidebar muncul di layar kecil
+        } else {
+            console.error('sidebar not found in DOM!');
         }
 
-        // Bersihkan backdrop modal jika ada
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        // Pastikan modal ditutup dan backdrop dihapus dengan log
+        loginModal.hide();
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
 
-        // Inisialisasi UI
+        // Initialize UI dan pindah ke dashboard
         renderCategoriesDropdown();
         renderAllCategories();
         updateDashboard();
@@ -2025,9 +2020,6 @@ function init() {
         renderAllTransactions();
         renderUserSettings();
         showPage('dashboard');
-        
-        // Simpan state
-        saveToLocalStorage();
     });
 }
 
