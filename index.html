@@ -1913,44 +1913,43 @@ async function loginUser(firebaseUser) {
 registerForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Dapatkan nilai input
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
     const confirmPassword = document.getElementById('register-confirm-password').value;
 
-    // Validasi input
-    if (!name || !email || !password || !confirmPassword) {
-        showAlert('danger', 'Harap isi semua field');
+    // Validasi input lebih ketat
+    if (!name || name.length < 3) {
+        showAlert('danger', 'Nama minimal 3 karakter');
         return;
     }
 
-    if (password.length < 6) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAlert('danger', 'Format email tidak valid');
+        return;
+    }
+
+    if (!password || password.length < 6) {
         showAlert('danger', 'Password minimal 6 karakter');
         return;
     }
 
     if (password !== confirmPassword) {
-        showAlert('danger', 'Password dan konfirmasi password tidak cocok');
+        showAlert('danger', 'Password dan konfirmasi tidak cocok');
         return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showAlert('danger', 'Format email tidak valid');
-        return;
-    }
-
-    // Disable tombol dan tampilkan loading
+    // Tampilkan loading
     const registerBtn = registerForm.querySelector('button[type="submit"]');
-    const originalBtnText = registerBtn.innerHTML;
+    const originalText = registerBtn.innerHTML;
     registerBtn.disabled = true;
-    registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Mendaftarkan...';
+    registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mendaftarkan...';
 
     try {
-        // 1. Buat akun dengan Firebase Auth
+        // 1. Buat akun di Firebase Auth
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         
-        // 2. Simpan data tambahan user ke Realtime Database
+        // 2. Simpan data tambahan ke Realtime Database
         const userData = {
             name,
             email,
@@ -1963,27 +1962,35 @@ registerForm.addEventListener('submit', async function(e) {
             createdAt: firebase.database.ServerValue.TIMESTAMP
         };
 
-        // Simpan ke database dengan UID sebagai key
+        // Simpan ke database dengan path users/<uid>
         await database.ref('users/' + userCredential.user.uid).set(userData);
 
-        // Registrasi berhasil
+        // Registrasi sukses
         registerModal.hide();
+        showAlert('success', 'Registrasi berhasil! Mengarahkan ke dashboard...');
         
-        // Tampilkan notifikasi sukses
-        showAlert('success', 'Registrasi berhasil! Anda akan langsung login.');
-        
-        // Login otomatis
+        // Auto login
         await loginUser(userCredential.user);
     } catch (error) {
         console.error('Error registrasi:', error);
-        handleAuthError(error);
+        
+        // Tampilkan error spesifik
+        let errorMessage = 'Terjadi kesalahan saat registrasi';
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = 'Email sudah terdaftar';
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = 'Password terlalu lemah (minimal 6 karakter)';
+        } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = 'Gagal terhubung ke jaringan';
+        }
+        
+        showAlert('danger', errorMessage);
     } finally {
-        // Reset tombol registrasi
+        // Reset tombol
         registerBtn.disabled = false;
-        registerBtn.innerHTML = originalBtnText;
+        registerBtn.innerHTML = originalText;
     }
 });
-
 
 
         // Toggle between login and register
