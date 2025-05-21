@@ -703,6 +703,24 @@
 
     /* Responsive Styles */
     @media (min-width: 768px) {
+        .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .page-title {
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-toolbar {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    #time-period, #add-transaction-btn {
+        width: 48%; /* Membagi lebar untuk dua tombol */
+    }
       .sidebar {
         transform: translateX(0);
       }
@@ -718,9 +736,7 @@
     }
 
     @media (max-width: 767px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
+      
       .sidebar:not(.collapsed) {
         transform: translateX(0);
       }
@@ -741,6 +757,27 @@
         padding-left: 0.5rem;
         padding-right: 0.5rem;
       }
+        .sidebar-toggle {
+        display: flex; /* Tampilkan hanya di mode HP */
+    }
+
+    .sidebar {
+        transform: translateX(-100%); /* Sembunyikan sidebar secara default di HP */
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .sidebar.active {
+        transform: translateX(0); /* Munculkan sidebar saat aktif */
+    }
+
+    main {
+        margin-left: 0; /* Reset margin pada mode HP */
+        transition: margin-left 0.3s ease-in-out;
+    }
+
+    .sidebar.active + main {
+        margin-left: var(--sidebar-width); /* Tambah margin saat sidebar aktif */
+    }
     }
 
     /* Custom Scrollbar */
