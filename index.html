@@ -1785,45 +1785,7 @@ function showAlert(type, message) {
 
 // Fungsi untuk handle error auth
 function handleAuthError(error) {
-    let errorMessage = 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.';
-    
-    switch (error.code) {
-        case 'auth/email-already-in-use':
-            errorMessage = 'Email sudah terdaftar. Gunakan email lain atau lakukan login.';
-            break;
-        case 'auth/invalid-email':
-            errorMessage = 'Format email tidak valid.';
-            break;
-        case 'auth/weak-password':
-            errorMessage = 'Password terlalu lemah. Minimal 6 karakter.';
-            break;
-        case 'auth/operation-not-allowed':
-            errorMessage = 'Operasi registrasi tidak diizinkan. Hubungi admin.';
-            break;
-        case 'auth/network-request-failed':
-            errorMessage = 'Gagal terhubung ke jaringan. Periksa koneksi internet Anda.';
-            break;
-    }
-    
-    showAlert('danger', errorMessage);
-}
-
-// Fungsi loginUser yang diperbarui
-async function loginUser(userId, email) {
-    try {
-        // Ambil data user dari database
-        const snapshot = await database.ref('users/' + userId).once('value');
-        const userData = snapshot.val();
-
-        if (!userData) {
-            throw new Error('Data pengguna tidak ditemukan');
-        }
-        // ... kode lanjutan ...
-
-        
-// Fungsi untuk handle error auth
-function handleAuthError(error) {
-    let errorMessage = 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.';
+    let errorMessage = 'Terjadi kesalahan saat autentikasi. Silakan coba lagi.';
     
     switch (error.code) {
         case 'auth/email-already-in-use':
@@ -1857,7 +1819,6 @@ function handleAuthError(error) {
     
     showAlert('danger', errorMessage);
 }
-
         
     // Setup event listeners
     function setupEventListeners() {
@@ -1870,17 +1831,20 @@ loginForm.addEventListener('submit', async function(e) {
     const password = document.getElementById('login-password').value;
     const rememberMe = document.getElementById('remember-me').checked;
 
+    // Validasi input
     if (!email || !password) {
         showAlert('danger', 'Harap isi email dan password');
         return;
     }
 
+    // Disable tombol dan tampilkan loading
     const loginBtn = loginForm.querySelector('button[type="submit"]');
     const originalBtnText = loginBtn.innerHTML;
     loginBtn.disabled = true;
     loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Masuk...';
 
     try {
+        // Login dengan Firebase Auth
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         
         if (rememberMe) {
@@ -1889,21 +1853,25 @@ loginForm.addEventListener('submit', async function(e) {
             localStorage.removeItem('rememberedEmail');
         }
 
+        // Login berhasil
         loginModal.hide();
-        await loadUserData(userCredential.user.uid); // Gunakan UID bukan email
+        await loginUser(userCredential.user);
     } catch (error) {
         console.error('Error login:', error);
         handleAuthError(error);
     } finally {
+        // Reset tombol login
         loginBtn.disabled = false;
         loginBtn.innerHTML = originalBtnText;
     }
 });
 
 // Fungsi untuk memuat data user
-async function loadUserData(uid) {
+// Fungsi login yang diperbarui
+async function loginUser(firebaseUser) {
     try {
-        const snapshot = await database.ref('users/' + uid).once('value');
+        // Ambil data user dari database menggunakan UID
+        const snapshot = await database.ref('users/' + firebaseUser.uid).once('value');
         const userData = snapshot.val();
 
         if (!userData) {
@@ -1911,8 +1879,8 @@ async function loadUserData(uid) {
         }
 
         // Update state aplikasi
-        state.currentUser = uid;
-        state.users[uid] = userData;
+        state.currentUser = firebaseUser.uid;
+        state.users[firebaseUser.uid] = userData;
         state.transactions = userData.transactions || [];
         state.categories = userData.categories || getDefaultCategories();
 
@@ -1929,18 +1897,23 @@ async function loadUserData(uid) {
         renderUserSettings();
         showPage('dashboard');
         
+        // Tampilkan notifikasi sukses
         showAlert('success', `Selamat datang, ${userData.name}!`);
     } catch (error) {
         console.error('Error loading user data:', error);
         showAlert('danger', 'Gagal memuat data pengguna. Silakan coba lagi.');
+        
+        // Logout jika ada masalah
         await auth.signOut();
     }
-        }
+}
+
 
 // Register form
 registerForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    // Dapatkan nilai input
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
@@ -1962,14 +1935,22 @@ registerForm.addEventListener('submit', async function(e) {
         return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAlert('danger', 'Format email tidak valid');
+        return;
+    }
+
+    // Disable tombol dan tampilkan loading
     const registerBtn = registerForm.querySelector('button[type="submit"]');
     const originalBtnText = registerBtn.innerHTML;
     registerBtn.disabled = true;
     registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Mendaftarkan...';
 
     try {
+        // 1. Buat akun dengan Firebase Auth
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         
+        // 2. Simpan data tambahan user ke Realtime Database
         const userData = {
             name,
             email,
@@ -1982,15 +1963,22 @@ registerForm.addEventListener('submit', async function(e) {
             createdAt: firebase.database.ServerValue.TIMESTAMP
         };
 
+        // Simpan ke database dengan UID sebagai key
         await database.ref('users/' + userCredential.user.uid).set(userData);
 
+        // Registrasi berhasil
         registerModal.hide();
+        
+        // Tampilkan notifikasi sukses
         showAlert('success', 'Registrasi berhasil! Anda akan langsung login.');
-        await loadUserData(userCredential.user.uid);
+        
+        // Login otomatis
+        await loginUser(userCredential.user);
     } catch (error) {
         console.error('Error registrasi:', error);
         handleAuthError(error);
     } finally {
+        // Reset tombol registrasi
         registerBtn.disabled = false;
         registerBtn.innerHTML = originalBtnText;
     }
@@ -3531,8 +3519,7 @@ function generateInsights() {
             
             alert('Semua data telah direset ke kondisi awal');
         }
-
-        /// Initialize the app when DOM is loaded
+// Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Check auth state
     auth.onAuthStateChanged(async (user) => {
