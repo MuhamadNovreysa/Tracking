@@ -2066,6 +2066,13 @@ logoutBtn.addEventListener('click', async function() {
                 showPage(page);
             });
         });
+// Sidebar toggle untuk mode HP
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    sidebarToggle.addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('active');
+    });
+        
 
         // Add transaction
         addTransactionBtn.addEventListener('click', function() {
